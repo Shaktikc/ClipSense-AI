@@ -67,11 +67,11 @@ def get_multiple_transcripts(request: VideoRequest) -> Dict:
      
     # Generate combined summary if we have any successful transcripts
     combined_summary = None
-    print(all_transcripts)
+ 
     if all_transcripts:
         combined_text = " ".join(all_transcripts)
         combined_summary = generate_summary(combined_text, client)
-    
+        print(combined_summary)
     return JSONResponse(
         content={
             "results": results,
