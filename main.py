@@ -17,55 +17,41 @@ load_dotenv()
 api_key = os.environ["API_KEY"]
 model = "mistral-large-latest"
 
-# client = Mistral(api_key=api_key)
-
-# chat_response = client.chat.complete(
-#     model= model,
-#     messages = [
-#         {
-#             "role": "user",
-#             "content": "What is the best French cheese?",
-#         },
-#     ]
-# )
-# print(chat_response.choices[0].message.content)
-
-
 app = FastAPI()
 
-# @app.get("/transcript/{video_id}")
-# def get_transcript(video_id: str) -> Dict:
-#     try:
-#         transcript = YouTubeTranscriptApi.get_transcript(video_id)
-        
-#         # Format the transcript data
-#         formatted_transcript = {
-#             "status": "success",
-#             "video_id": video_id,
-#             "transcript": transcript
-#         }
-        
-#         return JSONResponse(
-#             content=formatted_transcript,
-#             status_code=200
-#         )
-#     except Exception as e:
-#         return JSONResponse(
-#             content={
-#                 "status": "error",
-#                 "message": str(e)
-#             },
-#             status_code=500
-#         )
+def generate_summary(transcript_text: str, client: Mistral) -> str:
+    prompt = f"""Summarize the following combined video transcripts concisely:
+    {transcript_text}
+    
+    Provide a clear and concise summary of the main points from all videos combined."""
+
+    chat_response = client.chat.complete(
+        model="mistral-large-latest",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ]
+    )
+    return chat_response.choices[0].message.content
 
 @app.post("/transcripts/")
 def get_multiple_transcripts(request: VideoRequest) -> Dict:
     results = []
     errors = []
+    all_transcripts = []
     
+    # Initialize Mistral client
+    client = Mistral(api_key=api_key)
+    
+    # First, collect all transcripts
     for video_id in request.video_ids:
         try:
             transcript = YouTubeTranscriptApi.get_transcript(video_id)
+            transcript_text = " ".join([entry["text"] for entry in transcript])
+            all_transcripts.append(transcript_text)
+      
             results.append({
                 "video_id": video_id,
                 "transcript": transcript,
@@ -78,10 +64,19 @@ def get_multiple_transcripts(request: VideoRequest) -> Dict:
                 "status": "error"
             })
     
+     
+    # Generate combined summary if we have any successful transcripts
+    combined_summary = None
+    print(all_transcripts)
+    if all_transcripts:
+        combined_text = " ".join(all_transcripts)
+        combined_summary = generate_summary(combined_text, client)
+    
     return JSONResponse(
         content={
             "results": results,
-            "errors": errors
+            "errors": errors,
+            "combined_summary": combined_summary
         },
         status_code=200 if results else 500
     )
