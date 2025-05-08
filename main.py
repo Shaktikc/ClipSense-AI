@@ -21,7 +21,7 @@ app = FastAPI()
 
 def generate_summary(transcript_text: str, client: Mistral) -> str:
     prompt = f"""Summarize the following combined video transcripts concisely:
-    {transcript_text}
+    {transcript_text}                                                                                                                                                                                                                                                                                                                               
     
     Provide a clear and concise summary of the main points from all videos combined."""
 
