@@ -1,48 +1,55 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
-from app.models.schemas import VideoRequest, TranscriptResponse, TranscriptResult, ErrorResult
+from app.models.schemas import (
+    VideoRequest,
+    TranscriptResponse,
+    TranscriptResult,
+    ErrorResult,
+)
 from app.services.transcript_service import TranscriptService
+import json
 
 router = APIRouter()
 transcript_service = TranscriptService()
+
 
 @router.post("/transcripts/", response_model=TranscriptResponse)
 def get_multiple_transcripts(request: VideoRequest):
     results = []
     errors = []
     all_transcripts = []
-    
+
     # Collect all transcripts
     for video_id in request.video_ids:
         transcript, error = transcript_service.get_transcript(video_id)
         if transcript:
-            transcript_text = " ".join([entry["text"] for entry in transcript])
-            all_transcripts.append(transcript_text)
-            results.append(TranscriptResult(
-                video_id=video_id,
-                transcript=transcript,
-                status="success"
-            ))
+            # transcript_text = " ".join([entry["text"] for entry in transcript])
+            transcript_string = json.dumps(transcript)
+            all_transcripts.append(transcript_string)
+            results.append(
+                TranscriptResult(
+                    video_id=video_id, transcript=transcript, status="success"
+                )
+            )
         else:
-            errors.append(ErrorResult(
-                video_id=video_id,
-                error=error,
-                status="error"
-            ))
-    
+            errors.append(ErrorResult(video_id=video_id, error=error, status="error"))
+
     # print(all_transcripts)
-    
+
     # Generate combined summary if we have any successful transcripts
     combined_summary = None
+    # if all_transcripts:
+    #     combined_text = " ".join(all_transcripts)
+    #     combined_summary = transcript_service.generate_summary(combined_text)
     if all_transcripts:
-        combined_text = " ".join(all_transcripts)
-        combined_summary = transcript_service.generate_summary(combined_text)
-    
+        combined_summary = transcript_service.generate_summary(transcript_string)
+        print("niceee", combined_summary)
+
     return JSONResponse(
         content=TranscriptResponse(
             results=results,
             errors=errors,
-            combined_summary=combined_summary
+            combined_summary=combined_summary,
         ).model_dump(),
-        status_code=200 if results else 500
+        status_code=200 if results else 500,
     )
