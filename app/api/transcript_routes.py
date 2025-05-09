@@ -43,6 +43,6 @@ def get_multiple_transcripts(request: VideoRequest):
             results=results,
             errors=errors,
             combined_summary=combined_summary
-        ).dict(),
+        ).model_dump(),
         status_code=200 if results else 500
     )
