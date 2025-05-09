@@ -30,6 +30,8 @@ def get_multiple_transcripts(request: VideoRequest):
                 status="error"
             ))
     
+    # print(all_transcripts)
+    
     # Generate combined summary if we have any successful transcripts
     combined_summary = None
     if all_transcripts:
