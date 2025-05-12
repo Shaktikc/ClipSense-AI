@@ -32,9 +32,9 @@ class TranscriptService:
         - its `start` time,
         - its `duration`.
 
-        Return your response in this exact structure:
+        Return your response in this exact structure and inside the structured dont include the "json" word :
 
-        ```json
+        "
         {{
             "summary": "Your paragraph summary here.",
             "mapping": {{
@@ -46,7 +46,7 @@ class TranscriptService:
                 ]
             }}
         }}
-        ```
+        "
 
         Here is the transcript to analyze:
         {transcript_string}

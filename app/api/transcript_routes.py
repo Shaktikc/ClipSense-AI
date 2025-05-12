@@ -8,6 +8,8 @@ from app.models.schemas import (
 )
 from app.services.transcript_service import TranscriptService
 import json
+import demjson3
+import re
 
 router = APIRouter()
 transcript_service = TranscriptService()
@@ -38,18 +40,23 @@ def get_multiple_transcripts(request: VideoRequest):
 
     # Generate combined summary if we have any successful transcripts
     combined_summary = None
+    combined_summary_obj = None
     # if all_transcripts:
     #     combined_text = " ".join(all_transcripts)
     #     combined_summary = transcript_service.generate_summary(combined_text)
     if all_transcripts:
         combined_summary = transcript_service.generate_summary(transcript_string)
+        cleaned_transcript = re.sub(
+            r"[`\u2018\u2019\u201c\u201d]", "", combined_summary
+        )
+        combined_summary_obj = demjson3.decode(cleaned_transcript)
         print("niceee", combined_summary)
 
     return JSONResponse(
         content=TranscriptResponse(
             results=results,
             errors=errors,
-            combined_summary=combined_summary,
+            combined_summary=combined_summary_obj,
         ).model_dump(),
         status_code=200 if results else 500,
     )
