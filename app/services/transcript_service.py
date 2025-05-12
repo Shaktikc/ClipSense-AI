@@ -31,6 +31,7 @@ class TranscriptService:
         - the `matched_text`,
         - its `start` time,
         - its `duration`.
+        -its `video_id`.
 
         Return your response in this exact structure and inside the structured dont include the "json" word :
 

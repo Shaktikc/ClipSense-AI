@@ -25,8 +25,9 @@ def get_multiple_transcripts(request: VideoRequest):
     for video_id in request.video_ids:
         transcript, error = transcript_service.get_transcript(video_id)
         if transcript:
-            # transcript_text = " ".join([entry["text"] for entry in transcript])
-            transcript_string = json.dumps(transcript)
+            transcript_string = json.dumps(
+                {"video_id": video_id, "transcript": transcript}
+            )
             all_transcripts.append(transcript_string)
             results.append(
                 TranscriptResult(
@@ -41,16 +42,16 @@ def get_multiple_transcripts(request: VideoRequest):
     # Generate combined summary if we have any successful transcripts
     combined_summary = None
     combined_summary_obj = None
+    print("niceee", all_transcripts)
     # if all_transcripts:
     #     combined_text = " ".join(all_transcripts)
     #     combined_summary = transcript_service.generate_summary(combined_text)
     if all_transcripts:
-        combined_summary = transcript_service.generate_summary(transcript_string)
+        combined_summary = transcript_service.generate_summary(all_transcripts)
         cleaned_transcript = re.sub(
             r"[`\u2018\u2019\u201c\u201d]", "", combined_summary
         )
         combined_summary_obj = demjson3.decode(cleaned_transcript)
-        print("niceee", combined_summary)
 
     return JSONResponse(
         content=TranscriptResponse(
