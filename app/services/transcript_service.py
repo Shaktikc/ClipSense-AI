@@ -44,8 +44,7 @@ class TranscriptService:
         self, transcript_string: str, summary: str
     ) -> str:
         prompt = f"""
-        You are a helpful assistant.
-
+      
         You are given a summary and youtube transcript. Each transcript contains:
         - "text": a phrase or sentence from the video,
         - "start": the timestamp (in seconds) when the speech begins,
@@ -54,9 +53,9 @@ class TranscriptService:
         Your tasks:
         1. For each **sentence in the summary**, identify the most relevant transcript segments that support it.
         2. For each matched segment, include:
-        - the matched_text,
-        - its start time,
-        - its duration.
+        - the matched_text: the matching phrase from the transcript,
+        - its start time:its starting time in seconds,
+        - its duration:how long it lasted in seconds.
         - its video_id.
         
 
