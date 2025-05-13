@@ -1,12 +1,13 @@
 from youtube_transcript_api import YouTubeTranscriptApi
-from mistralai import Mistral
 from typing import List, Tuple, Dict
-from app.config.settings import API_KEY, MODEL_NAME
+import os
+from openai import OpenAI
+from app.config.settings import API_KEY
 
 
 class TranscriptService:
     def __init__(self):
-        self.client = Mistral(api_key=API_KEY)
+        self.client = OpenAI(api_key=API_KEY)
 
     def get_transcript(self, video_id: str) -> Tuple[List[Dict], str]:
         try:
@@ -31,7 +32,7 @@ class TranscriptService:
         - the `matched_text`,
         - its `start` time,
         - its `duration`.
-        -its `video_id`.
+        - its `video_id`.
 
         Return your response in this exact structure and inside the structured dont include the "json" word :
 
@@ -53,14 +54,14 @@ class TranscriptService:
         {transcript_string}
         """
 
-        chat_response = self.client.chat.complete(
-            model=MODEL_NAME,
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
-            ],
-        )
-        # print("test", chat_response.choices[0].message.content)
-        return chat_response.choices[0].message.content
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4.1-mini",  # or "gpt-4", "gpt-3.5-turbo", etc.
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": prompt},
+                ],
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            return f"Error generating summary: {str(e)}"
