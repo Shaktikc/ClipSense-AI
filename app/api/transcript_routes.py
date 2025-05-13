@@ -48,16 +48,19 @@ def get_multiple_transcripts(request: VideoRequest):
     #     combined_summary = transcript_service.generate_summary(combined_text)
     if all_transcripts:
         combined_summary = transcript_service.generate_summary(all_transcripts)
-        # cleaned_transcript = re.sub(
-        #     r"[`\u2018\u2019\u201c\u201d]", "", combined_summary
-        # )
-        # combined_summary_obj = demjson3.decode(cleaned_transcript)
+        summary_to_transcript_map = transcript_service.summary_to_transcript_mapping(
+            all_transcripts, combined_summary
+        )
+        cleaned_transcript = re.sub(
+            r"[`\u2018\u2019\u201c\u201d]", "", summary_to_transcript_map
+        )
+        combined_summary_obj = demjson3.decode(cleaned_transcript)
 
     return JSONResponse(
         content=TranscriptResponse(
             results=results,
             errors=errors,
-            combined_summary=combined_summary,
+            combined_summary=combined_summary_obj,
         ).model_dump(),
         status_code=200 if results else 500,
     )
