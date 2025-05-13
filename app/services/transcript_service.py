@@ -18,41 +18,15 @@ class TranscriptService:
 
     def generate_summary(self, transcript_string: str) -> str:
         prompt = f"""
-        You are a helpful assistant.
+                  Summarize the following YouTube transcript as if you are a person directly sharing 
+                  the knowledge. Do not say that you watched the video. Present the information as 
+                  your own, clearly and confidently. Use a natural, human-like tone that’s conversational
+                  yet informative. Focus on the core ideas, key points, and main takeaways. Avoid 
+                  robotic language, repetition, or filler words from the transcript.
 
-        You are given a transcript of a video in JSON format. Each entry contains:
-        - "text": a phrase or sentence from the video,
-        - "start": the timestamp in seconds,
-        - "duration": how long the speech lasted.
-
-        Your tasks:
-        1. Write a concise, coherent summary of the transcript in **paragraph form**.
-        2. Then, for each **distinct idea or sentence in the summary**, identify the most relevant transcript segments that support it.
-        3. For each matched segment, include:
-        - the `matched_text`,
-        - its `start` time,
-        - its `duration`.
-        - its `video_id`.
-
-        Return your response in this exact structure and inside the structured dont include the "json" word :
-
-        "
-        {{
-            "summary": "Your paragraph summary here.",
-            "mapping": {{
-                "summary sentence or idea 1": [
-                    {{"matched_text": "...", "start": ..., "duration": ...}}
-                ],
-                "summary sentence or idea 2": [
-                    ...
-                ]
-            }}
-        }}
-        "
-
-        Here is the transcript to analyze:
-        {transcript_string}
-        """
+                  Here is the transcript to analyze:
+                  {transcript_string}
+                """
 
         try:
             response = self.client.chat.completions.create(
