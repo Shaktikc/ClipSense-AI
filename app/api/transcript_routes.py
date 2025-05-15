@@ -53,7 +53,7 @@ def get_multiple_transcripts(
     combined_summary = None
     combined_summary_obj = None
     transript_data = None
-    print("niceee", all_transcripts)
+    # print("niceee", all_transcripts)
     # if all_transcripts:
     #     combined_text = " ".join(all_transcripts)
     #     combined_summary = transcript_service.generate_summary(combined_text)
@@ -72,7 +72,7 @@ def get_multiple_transcripts(
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
             shutil.copyfileobj(video_file.file, tmp)
             tmp_path = tmp.name
-        preview_intro_clip(tmp_path)
+        preview_intro_clip(tmp_path, transript_data["combined_summary"]["mapping"])
 
     return JSONResponse(
         content=TranscriptResponse(
