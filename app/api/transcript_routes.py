@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, APIRouter, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from app.models.schemas import (
     VideoRequest,
@@ -10,19 +10,20 @@ from app.services.transcript_service import TranscriptService
 import json
 import demjson3
 import re
+from typing import List
 
 router = APIRouter()
 transcript_service = TranscriptService()
 
 
 @router.post("/transcripts/", response_model=TranscriptResponse)
-def get_multiple_transcripts(request: VideoRequest):
+def get_multiple_transcripts(video_ids: List[str] = Form(...)):
     results = []
     errors = []
     all_transcripts = []
 
     # Collect all transcripts
-    for video_id in request.video_ids:
+    for video_id in video_ids:
         transcript, error = transcript_service.get_transcript(video_id)
         if transcript:
             transcript_string = json.dumps(
@@ -42,6 +43,7 @@ def get_multiple_transcripts(request: VideoRequest):
     # Generate combined summary if we have any successful transcripts
     combined_summary = None
     combined_summary_obj = None
+    transript_data = None
     print("niceee", all_transcripts)
     # if all_transcripts:
     #     combined_text = " ".join(all_transcripts)
