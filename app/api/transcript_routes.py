@@ -72,7 +72,7 @@ def get_multiple_transcripts(
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
             shutil.copyfileobj(video_file.file, tmp)
             tmp_path = tmp.name
-        preview_intro_clip(tmp_path, start, end, fps)
+        preview_intro_clip(tmp_path)
 
     return JSONResponse(
         content=TranscriptResponse(
