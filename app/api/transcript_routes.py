@@ -7,17 +7,26 @@ from app.models.schemas import (
     ErrorResult,
 )
 from app.services.transcript_service import TranscriptService
+from app.services.mergedVideo_service import preview_intro_clip
 import json
 import demjson3
 import re
 from typing import List
+import tempfile
+import shutil
 
 router = APIRouter()
 transcript_service = TranscriptService()
 
 
 @router.post("/transcripts/", response_model=TranscriptResponse)
-def get_multiple_transcripts(video_ids: List[str] = Form(...)):
+def get_multiple_transcripts(
+    video_ids: List[str] = Form(...),
+    video_file: UploadFile = File(...),
+    start: int = Form(1),
+    end: int = Form(11),
+    fps: int = Form(20),
+):
     results = []
     errors = []
     all_transcripts = []
@@ -59,6 +68,11 @@ def get_multiple_transcripts(video_ids: List[str] = Form(...)):
         # combined_summary_obj = demjson3.decode(cleaned_transcript)
 
         transript_data = transcript_service.transcript_mock_data()
+        # Save the uploaded file to a temporary location
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
+            shutil.copyfileobj(video_file.file, tmp)
+            tmp_path = tmp.name
+        preview_intro_clip(tmp_path, start, end, fps)
 
     return JSONResponse(
         content=TranscriptResponse(
