@@ -43,8 +43,9 @@ def preview_intro_clip(
         if value:  # Make sure the list is not empty
             start = value[0]["start"]
             end = value[0]["start"] + value[0]["duration"]
+            video_id = value[0]["video_id"]
             print(
-                f"start: {value[0]['start']}, end: {value[0]['start'] + value[0]['duration']}"
+                f"start: {value[0]['start']}, end: {value[0]['start'] + value[0]['duration']}, video_id: {value[0]['video_id']}"
             )
     # try:
     #     # Process videos and create clips
