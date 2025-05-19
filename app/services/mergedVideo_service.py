@@ -11,6 +11,7 @@ def preview_intro_clip(
     Loads videos, extracts subclips, and previews them.
     """
     videos: Dict[str, VideoFileClip] = {}  # Store videos with their IDs as keys
+    clips: List[VideoFileClip] = []  # Store subclips to be merged
     # video = VideoFileClip(saved_video_paths)
     # clip1 = video.subclipped(0, 5)
     # clip2 = video.subclipped(9, 14)
@@ -21,43 +22,39 @@ def preview_intro_clip(
 
     # quick_compo.write_videofile("merged.mp4")
 
-    # quick_compo.ipython_display(width=480)
-
     # print("summary_map_to_transcript", summary_map_to_transcript)
 
     for video_path in saved_video_paths:
-        # Extract video name from path without extension
         video_name = os.path.splitext(os.path.basename(video_path))[0]
         try:
             video = VideoFileClip(video_path)
             videos[video_name] = video
-            # print(f"Loaded video: {video_name}")
+            print(f"Loaded video: {video_name}")
         except Exception as e:
             print(f"Error loading video {video_name}: {str(e)}")
 
-    # Now you can access videos by their ID
-    # Example: videos["FwOTs4UxQS4"] will give you that specific video's VideoFileClip
-    print("Loaded videos:", videos)
+    try:
+        # Process only matching video IDs from summary map
+        for key, value in summary_map_to_transcript.items():
+            if value:
+                video_id = value[0]["video_id"]
+                # Only process if video ID exists in loaded videos
+                if video_id in videos:
+                    start = value[0]["start"]
+                    end = value[0]["start"] + value[0]["duration"]
+                    print(
+                        f"Processing clip for {video_id} - Start: {start}, End: {end}"
+                    )
+                    clip = videos[video_id].subclipped(start, end)
+                    clips.append(clip)
 
-    for key, value in summary_map_to_transcript.items():
-        if value:  # Make sure the list is not empty
-            start = value[0]["start"]
-            end = value[0]["start"] + value[0]["duration"]
-            video_id = value[0]["video_id"]
-            print(
-                f"start: {value[0]['start']}, end: {value[0]['start'] + value[0]['duration']}, video_id: {value[0]['video_id']}"
-            )
-    # try:
-    #     # Process videos and create clips
-    #     clips = []
-    #     for video_name, video in videos.items():
-    #         clip = video.subclip(0, 5)  # Example: first 5 seconds
-    #         clips.append(clip)
+        # Merge clips if any were created
+        if clips:
+            final_video = concatenate_videoclips(clips)
+            final_video.write_videofile("merged.mp4")
+            print("Successfully created merged.mp4")
 
-    #     if clips:
-    #         final_video = concatenate_videoclips(clips)
-    #         final_video.write_videofile("merged.mp4")
-    # finally:
-    #     # Clean up - close all video files
-    #     for video in videos.values():
-    #         video.close()
+    finally:
+        # Clean up
+        for video in videos.values():
+            video.close()
