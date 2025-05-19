@@ -1,12 +1,16 @@
 from moviepy import VideoFileClip, CompositeVideoClip, concatenate_videoclips
 import numpy as np
+from typing import List
 
 
-def preview_intro_clip(video_path: str, summary_map_to_transcript: any):
+def preview_intro_clip(
+    saved_video_paths: List[str], summary_map_to_transcript: any, video_ids: List[str]
+):
     """
     Loads a video, extracts a subclip, and previews it.
     """
-    video = VideoFileClip(video_path)
+    # video = VideoFileClip(saved_video_paths)
+    print("video shakti", saved_video_paths)
     # clip1 = video.subclipped(0, 5)
     # clip2 = video.subclipped(9, 14)
     # clip3 = video.subclipped(330, 350)

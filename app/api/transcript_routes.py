@@ -14,6 +14,7 @@ import re
 from typing import List
 import tempfile
 import shutil
+import os
 
 router = APIRouter()
 transcript_service = TranscriptService()
@@ -22,7 +23,7 @@ transcript_service = TranscriptService()
 @router.post("/transcripts/", response_model=TranscriptResponse)
 def get_multiple_transcripts(
     video_ids: List[str] = Form(...),
-    video_file: UploadFile = File(...),
+    video_files: List[UploadFile] = File(...),  # Changed to List[UploadFile]
     start: int = Form(1),
     end: int = Form(11),
     fps: int = Form(20),
@@ -53,26 +54,31 @@ def get_multiple_transcripts(
     combined_summary = None
     combined_summary_obj = None
     transript_data = None
-    # print("niceee", all_transcripts)
+    # print("niceee", video_ids)
     # if all_transcripts:
     #     combined_text = " ".join(all_transcripts)
     #     combined_summary = transcript_service.generate_summary(combined_text)
     if all_transcripts:
-        # combined_summary = transcript_service.generate_summary(all_transcripts)
-        # summary_to_transcript_map = transcript_service.summary_to_transcript_mapping(
-        #     all_transcripts, combined_summary
-        # )
-        # cleaned_transcript = re.sub(
-        #     r"[`\u2018\u2019\u201c\u201d]", "", summary_to_transcript_map
-        # )
-        # combined_summary_obj = demjson3.decode(cleaned_transcript)
-
         transript_data = transcript_service.transcript_mock_data()
-        # Save the uploaded file to a temporary location
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
-            shutil.copyfileobj(video_file.file, tmp)
-            tmp_path = tmp.name
-        preview_intro_clip(tmp_path, transript_data["combined_summary"]["mapping"])
+        saved_video_paths = []
+
+        # Process each uploaded video file
+        for video_file in video_files:
+            original_filename = video_file.filename
+            temp_dir = os.path.join(os.getcwd(), "temp")
+            os.makedirs(temp_dir, exist_ok=True)
+            tmp_path = os.path.join(temp_dir, original_filename)
+
+            with open(tmp_path, "wb") as tmp:
+                shutil.copyfileobj(video_file.file, tmp)
+            saved_video_paths.append(tmp_path)
+
+        # Pass all video paths at once
+        preview_intro_clip(
+            saved_video_paths,  # Now passing list of paths
+            transript_data["combined_summary"]["mapping"],
+            video_ids,
+        )
 
     return JSONResponse(
         content=TranscriptResponse(
