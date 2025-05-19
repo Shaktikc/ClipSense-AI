@@ -1,16 +1,17 @@
+import os
 from moviepy import VideoFileClip, CompositeVideoClip, concatenate_videoclips
 import numpy as np
-from typing import List
+from typing import List, Dict
 
 
 def preview_intro_clip(
     saved_video_paths: List[str], summary_map_to_transcript: any, video_ids: List[str]
 ):
     """
-    Loads a video, extracts a subclip, and previews it.
+    Loads videos, extracts subclips, and previews them.
     """
+    videos: Dict[str, VideoFileClip] = {}  # Store videos with their IDs as keys
     # video = VideoFileClip(saved_video_paths)
-    print("video shakti", saved_video_paths)
     # clip1 = video.subclipped(0, 5)
     # clip2 = video.subclipped(9, 14)
     # clip3 = video.subclipped(330, 350)
@@ -29,8 +30,30 @@ def preview_intro_clip(
 
             print(f"start: {value[0]['start']}")
 
-    # Extract the start and end times from the summary map
+    for video_path in saved_video_paths:
+        # Extract video name from path without extension
+        video_name = os.path.splitext(os.path.basename(video_path))[0]
+        try:
+            video = VideoFileClip(video_path)
+            videos[video_name] = video
+            print(f"Loaded video: {video_name}")
+        except Exception as e:
+            print(f"Error loading video {video_name}: {str(e)}")
 
+    # Now you can access videos by their ID
+    # Example: videos["FwOTs4UxQS4"] will give you that specific video's VideoFileClip
+    print("Loaded videos:", videos)
+    # try:
+    #     # Process videos and create clips
+    #     clips = []
+    #     for video_name, video in videos.items():
+    #         clip = video.subclip(0, 5)  # Example: first 5 seconds
+    #         clips.append(clip)
 
-# Example usage:
-# preview_intro_clip("./home/shakti/Downloads/AI Agents, Clearly Explained_1080p.mp4")
+    #     if clips:
+    #         final_video = concatenate_videoclips(clips)
+    #         final_video.write_videofile("merged.mp4")
+    # finally:
+    #     # Clean up - close all video files
+    #     for video in videos.values():
+    #         video.close()
