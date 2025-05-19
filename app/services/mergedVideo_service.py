@@ -25,24 +25,27 @@ def preview_intro_clip(
 
     # print("summary_map_to_transcript", summary_map_to_transcript)
 
-    for key, value in summary_map_to_transcript.items():
-        if value:  # Make sure the list is not empty
-
-            print(f"start: {value[0]['start']}")
-
     for video_path in saved_video_paths:
         # Extract video name from path without extension
         video_name = os.path.splitext(os.path.basename(video_path))[0]
         try:
             video = VideoFileClip(video_path)
             videos[video_name] = video
-            print(f"Loaded video: {video_name}")
+            # print(f"Loaded video: {video_name}")
         except Exception as e:
             print(f"Error loading video {video_name}: {str(e)}")
 
     # Now you can access videos by their ID
     # Example: videos["FwOTs4UxQS4"] will give you that specific video's VideoFileClip
     print("Loaded videos:", videos)
+
+    for key, value in summary_map_to_transcript.items():
+        if value:  # Make sure the list is not empty
+            start = value[0]["start"]
+            end = value[0]["start"] + value[0]["duration"]
+            print(
+                f"start: {value[0]['start']}, end: {value[0]['start'] + value[0]['duration']}"
+            )
     # try:
     #     # Process videos and create clips
     #     clips = []
