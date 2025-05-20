@@ -55,12 +55,20 @@ def get_multiple_transcripts(
     combined_summary_obj = None
     transript_data = None
     # print("niceee", video_ids)
-    # if all_transcripts:
-    #     combined_text = " ".join(all_transcripts)
-    #     combined_summary = transcript_service.generate_summary(combined_text)
     if all_transcripts:
-        transript_data = transcript_service.transcript_mock_data()
+        combined_summary = transcript_service.generate_summary(all_transcripts)
+        summary_to_transcript_map = transcript_service.summary_to_transcript_mapping(
+            all_transcripts, combined_summary
+        )
+        cleaned_transcript = re.sub(
+            r"[`\u2018\u2019\u201c\u201d]", "", summary_to_transcript_map
+        )
+        combined_summary_obj = demjson3.decode(cleaned_transcript)
+        print("combined_summary_obj", combined_summary_obj)
         saved_video_paths = []
+    # if all_transcripts:
+    #     transript_data = transcript_service.transcript_mock_data()
+    #     saved_video_paths = []
 
         # Process each uploaded video file
         for video_file in video_files:
@@ -76,7 +84,7 @@ def get_multiple_transcripts(
         # Pass all video paths at once
         preview_intro_clip(
             saved_video_paths,  # Now passing list of paths
-            transript_data["combined_summary"]["mapping"],
+            combined_summary_obj["mapping"],
             video_ids,
         )
 
@@ -84,7 +92,7 @@ def get_multiple_transcripts(
         content=TranscriptResponse(
             results=results,
             errors=errors,
-            combined_summary=transript_data,
+            combined_summary=combined_summary_obj,
         ).model_dump(),
         status_code=200 if results else 500,
     )
