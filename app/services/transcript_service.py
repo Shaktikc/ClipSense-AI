@@ -3,18 +3,21 @@ from typing import List, Tuple, Dict
 import os
 from openai import OpenAI
 from app.config.settings import API_KEY
-
+import time
 
 class TranscriptService:
     def __init__(self):
         self.client = OpenAI(api_key=API_KEY)
 
     def get_transcript(self, video_id: str) -> Tuple[List[Dict], str]:
-        try:
-            transcript = YouTubeTranscriptApi.get_transcript(video_id)
-            return transcript, None
-        except Exception as e:
-            return None, str(e)
+        for attempt in range(10):
+            try:
+                transcript = YouTubeTranscriptApi.get_transcript(video_id)
+                return transcript, None
+            except Exception as e:
+                if attempt == 3:
+                    return None, str(e)
+                time.sleep(1)  # Wait a bit before retrying
 
     def generate_summary(self, transcript_string: str) -> str:
         prompt = f"""

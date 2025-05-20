@@ -42,6 +42,10 @@ def preview_intro_clip(
                 if video_id in videos:
                     start = value[0]["start"]
                     end = value[0]["start"] + value[0]["duration"]
+                    video_duration = videos[video_id].duration
+                    # Clamp end time to video duration
+                    if end > video_duration:
+                        end = video_duration
                     print(
                         f"Processing clip for {video_id} - Start: {start}, End: {end}"
                     )
