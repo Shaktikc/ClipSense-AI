@@ -21,16 +21,12 @@ class VideoSummerizerService:
                 time.sleep(1)  # Wait a bit before retrying
 
 
-    def generate_match_prompt(
+    def transcript_related_to_user_query(
         self,
         video_id: str,
         user_query: str,
         transcript: list[dict]
     ) -> str:
-        """
-        Build a prompt that instructs the model to find and return the most relevant
-        transcript segments matching the user's query, in the exact JSON structure required.
-        """
         # Serialize the transcript array into a compact JSON string
         transcript_json = json.dumps(transcript, ensure_ascii=False)
 
