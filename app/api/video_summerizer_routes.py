@@ -20,7 +20,7 @@ router = APIRouter()
 transcript_service = TranscriptService()
 
 
-@router.post("/transcripts/", response_model=TranscriptResponse)
+@router.post("/youtube-videos-summary/", response_model=TranscriptResponse)
 def get_multiple_transcripts(
     video_ids: List[str] = Form(...),
     video_files: List[UploadFile] = File(...),  # Changed to List[UploadFile]
