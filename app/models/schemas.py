@@ -27,4 +27,4 @@ class TranscriptResponse(BaseModel):
 class VideoSummaryResponse(BaseModel):
     results: List[TranscriptResult]
     errors: List[ErrorResult]
-    combined_summary: Any
+    transcript_related_to_user_query: Any
