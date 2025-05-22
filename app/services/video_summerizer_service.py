@@ -20,77 +20,47 @@ class VideoSummerizerService:
                     return None, str(e)
                 time.sleep(1)  # Wait a bit before retrying
 
-    def generate_summary(self, transcript_string: str) -> str:
-        prompt = f"""
-                  Summarize the following YouTube transcript as if you are a person directly sharing 
-                  the knowledge. Do not say that you watched the video. Present the information as 
-                  your own, clearly and confidently. Use a natural, human-like tone that’s conversational
-                  yet informative. Focus on the core ideas, key points, and main takeaways. Avoid 
-                  robotic language, repetition, or filler words from the transcript.
 
-                  Here is the transcript to analyze:
-                  {transcript_string}
-                """
-
-        try:
-            response = self.client.chat.completions.create(
-                model="gpt-4.1-mini",  # or "gpt-4", "gpt-3.5-turbo", etc.
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": prompt},
-                ],
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            return f"Error generating summary: {str(e)}"
-
-    def summary_to_transcript_mapping(
-        self, transcript_string: str, summary: str
+    def generate_match_prompt(
+        self,
+        video_id: str,
+        user_query: str,
+        transcript: list[dict]
     ) -> str:
-        prompt = f"""
-      
-        You are given a summary and youtube transcript. Each transcript contains:
-        - "text": a phrase or sentence from the video,
-        - "start": the timestamp (in seconds) when the speech begins,
-        - "duration": how long the speech lasted.
-
-        Your tasks:
-        1. For each **sentence in the summary**, identify the most relevant transcript segments that support it.
-        2. For each matched segment, include:
-        - the matched_text: the matching phrase from the transcript,
-        - its start time:its starting time in seconds,
-        - its duration:how long it lasted in seconds.
-        - its video_id.
-        
-
-        Return your response in this exact structure :
-
-        "
-        {{
-            "summary": "Your paragraph summary here.",
-            "mapping": {{
-                "summary sentence or idea 1": [
-                    {{"matched_text": "...", "start": ..., "duration": ...}}
-                ],
-                "summary sentence or idea 2": [
-                    ...
-                ]
-            }}
-        }}
-        "
-
-        Here is the summary  and  transcript to map:
-        {summary} {transcript_string}
         """
+        Build a prompt that instructs the model to find and return the most relevant
+        transcript segments matching the user's query, in the exact JSON structure required.
+        """
+        # Serialize the transcript array into a compact JSON string
+        transcript_json = json.dumps(transcript, ensure_ascii=False)
 
-        try:
-            response = self.client.chat.completions.create(
-                model="gpt-4.1-mini",  # or "gpt-4", "gpt-3.5-turbo", etc.
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": prompt},
-                ],
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            return f"Error generating structured summary: {str(e)}"
+        prompt = f"""
+                    You are given:
+                    - A `user_query`: "{user_query}". 
+                    - A `youtube transcript`:Each transcript contains:
+                        • "text": a phrase or sentence from the video,
+                        • "start":the timestamp (in seconds) when the speech begins,
+                        • "duration": how long the speech lasted.
+
+                    Your task:
+                    1. Understand the user's intent from the `user_query`.
+                    2. Identify the transcript segments that best answer or relate to the query (semantic relevance, not just keyword match).
+                    3. Return **only** the top matching segments.
+                    4. Format your response exactly as JSON string, using this structure:
+
+                    {{
+                    "transcript": [
+                        {{
+                        "matched_text": "<relevant text from transcript>",
+                        "start": <start time in seconds>,
+                        "duration": <duration in seconds>,
+                        "video_id": "{video_id}"
+                        }}
+                        // ... additional matches if relevant
+                    ]
+                    }}
+                            
+                    Here is the transcript to find best answer, relate to the user_query:
+                    {transcript_json}
+                    """
+        return prompt
