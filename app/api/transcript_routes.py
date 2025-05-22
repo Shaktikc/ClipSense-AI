@@ -24,9 +24,6 @@ transcript_service = TranscriptService()
 def get_multiple_transcripts(
     video_ids: List[str] = Form(...),
     video_files: List[UploadFile] = File(...),  # Changed to List[UploadFile]
-    start: int = Form(1),
-    end: int = Form(11),
-    fps: int = Form(20),
 ):
     results = []
     errors = []
