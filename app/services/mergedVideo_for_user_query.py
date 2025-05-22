@@ -42,7 +42,7 @@ def mergedVideo_for_user_query(
                     print(
                         f"Processing clip for {video_id} - Start: {start}, End: {end}"
                     )
-                    clip = videos[video_id].subclip(start, end)
+                    clip = videos[video_id].subclipped(start, end)
                     clips.append(clip)
 
         # Merge clips if any were created

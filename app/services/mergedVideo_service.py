@@ -12,17 +12,6 @@ def preview_intro_clip(
     """
     videos: Dict[str, VideoFileClip] = {}  # Store videos with their IDs as keys
     clips: List[VideoFileClip] = []  # Store subclips to be merged
-    # video = VideoFileClip(saved_video_paths)
-    # clip1 = video.subclipped(0, 5)
-    # clip2 = video.subclipped(9, 14)
-    # clip3 = video.subclipped(330, 350)
-    # clip4 = video.subclipped(80, 90)
-
-    # quick_compo = concatenate_videoclips([clip2, clip3])
-
-    # quick_compo.write_videofile("merged.mp4")
-
-    # print("summary_map_to_transcript", summary_map_to_transcript)
 
     for video_path in saved_video_paths:
         video_name = os.path.splitext(os.path.basename(video_path))[0]

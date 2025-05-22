@@ -57,24 +57,24 @@ def get_youtube_videos_summary(
         print("combined_summary_obj", user_query_match_transcript_obj)
         saved_video_paths = []
 
-    # if all_transcripts:
-    #     # Process each uploaded video file
-    #     for video_file in video_files:
-    #         original_filename = video_file.filename
-    #         temp_dir = os.path.join(os.getcwd(), "temp")
-    #         os.makedirs(temp_dir, exist_ok=True)
-    #         tmp_path = os.path.join(temp_dir, original_filename)
+    if all_transcripts:
+        # Process each uploaded video file
+        for video_file in video_files:
+            original_filename = video_file.filename
+            temp_dir = os.path.join(os.getcwd(), "temp")
+            os.makedirs(temp_dir, exist_ok=True)
+            tmp_path = os.path.join(temp_dir, original_filename)
 
-    #         with open(tmp_path, "wb") as tmp:
-    #             shutil.copyfileobj(video_file.file, tmp)
-    #         saved_video_paths.append(tmp_path)
+            with open(tmp_path, "wb") as tmp:
+                shutil.copyfileobj(video_file.file, tmp)
+            saved_video_paths.append(tmp_path)
 
-    #     # Pass all video paths at once
-    #     mergedVideo_for_user_query(
-    #         saved_video_paths,  # Now passing list of paths
-    #         user_query_match_transcript_obj["transcript"],
-    #         video_ids,
-    #     )
+        # Pass all video paths at once
+        mergedVideo_for_user_query(
+            saved_video_paths,  # Now passing list of paths
+            user_query_match_transcript_obj,
+            video_ids,
+        )
 
     return JSONResponse(
         content=VideoSummaryResponse(
