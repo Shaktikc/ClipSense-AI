@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, APIRouter, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from app.models.schemas import (
     VideoRequest,
-    TranscriptResponse,
+    VideoSummaryResponse,
     TranscriptResult,
     ErrorResult,
 )
@@ -20,7 +20,7 @@ router = APIRouter()
 video_summary_service = VideoSummerizerService()
 
 
-@router.post("/youtube-videos-summary/", response_model=VideoSummaryResponse)
+@router.post("/summaries/youtube/", response_model=VideoSummaryResponse)
 def get_youtube_videos_summary(
     video_ids: List[str] = Form(...),
     # video_files: List[UploadFile] = File(...),  # Changed to List[UploadFile]
@@ -53,7 +53,7 @@ def get_youtube_videos_summary(
     transript_data = None
     # print("niceee", video_ids)
     if all_transcripts:
-        user_query_match_transcript = video_summary_service.transcript_related_to_user_query("jkhkhkh",all_transcripts)
+        user_query_match_transcript = video_summary_service.transcript_related_to_user_query("why i shouldnt buy s25 edge?",all_transcripts)
         # summary_to_transcript_map = video_summary_service.summary_to_transcript_mapping(
         #     all_transcripts, combined_summary
         # )
