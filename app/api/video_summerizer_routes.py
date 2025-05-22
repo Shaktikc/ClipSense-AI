@@ -53,7 +53,7 @@ def get_youtube_videos_summary(
     transript_data = None
     # print("niceee", video_ids)
     if all_transcripts:
-        user_query_match_transcript = video_summary_service.transcript_related_to_user_query("why i shouldnt buy s25 edge?",all_transcripts)
+        user_query_match_transcript = video_summary_service.transcript_related_to_user_query("why i shouldnt buy iPhone 16?",all_transcripts)
         # summary_to_transcript_map = video_summary_service.summary_to_transcript_mapping(
         #     all_transcripts, combined_summary
         # )
