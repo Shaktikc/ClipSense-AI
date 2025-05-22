@@ -27,8 +27,6 @@ class VideoSummerizerService:
         transcript_string: list[dict]
     ) -> str:
         # Serialize the transcript array into a compact JSON string
-
-
         prompt = f"""
                     You are given:
                     - A `user_query`: "{user_query}". 
@@ -41,7 +39,7 @@ class VideoSummerizerService:
                     1. Understand the user's intent from the `user_query`.
                     2. Identify the transcript segments that best answer or relate to the query (semantic relevance, not just keyword match).
                     3. Return **only** the top matching segments.
-                    4. Format your response exactly as JSON string, using this structure:
+                    4. Format your response exactly , using this structure:
 
                     {{
                     "transcript": [
@@ -58,4 +56,16 @@ class VideoSummerizerService:
                     Here is the transcript to find best answer, relate to the user_query:
                     {transcript_string}
                     """
-        return prompt
+        
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4.1-mini",  # or "gpt-4", "gpt-3.5-turbo", etc.
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": prompt},
+                ],
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            return f"Error generating structured summary: {str(e)}"
+       
