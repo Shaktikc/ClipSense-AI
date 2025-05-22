@@ -24,10 +24,10 @@ class VideoSummerizerService:
     def transcript_related_to_user_query(
         self,
         user_query: str,
-        transcript: list[dict]
+        transcript_string: list[dict]
     ) -> str:
         # Serialize the transcript array into a compact JSON string
-        transcript_json = json.dumps(transcript, ensure_ascii=False)
+
 
         prompt = f"""
                     You are given:
@@ -56,6 +56,6 @@ class VideoSummerizerService:
                     }}
                             
                     Here is the transcript to find best answer, relate to the user_query:
-                    {transcript_json}
+                    {transcript_string}
                     """
         return prompt

@@ -22,3 +22,9 @@ class TranscriptResponse(BaseModel):
     results: List[TranscriptResult]
     errors: List[ErrorResult]
     combined_summary: Any
+
+
+class VideoSummaryResponse(BaseModel):
+    results: List[TranscriptResult]
+    errors: List[ErrorResult]
+    combined_summary: Any
