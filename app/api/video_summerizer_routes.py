@@ -6,7 +6,7 @@ from app.models.schemas import (
     TranscriptResult,
     ErrorResult,
 )
-from app.services.transcript_service import TranscriptService
+from app.services.video_summerizer_service import VideoSummerizerService
 from app.services.mergedVideo_service import preview_intro_clip
 import json
 import demjson3
@@ -17,16 +17,13 @@ import shutil
 import os
 
 router = APIRouter()
-transcript_service = TranscriptService()
+video_summary_service = VideoSummerizerService()
 
 
-@router.post("/youtube-videos-summary/", response_model=TranscriptResponse)
-def get_multiple_transcripts(
+@router.post("/youtube-videos-summary/", response_model=VideoSummaryResponse)
+def get_youtube_videos_summary(
     video_ids: List[str] = Form(...),
-    video_files: List[UploadFile] = File(...),  # Changed to List[UploadFile]
-    start: int = Form(1),
-    end: int = Form(11),
-    fps: int = Form(20),
+    # video_files: List[UploadFile] = File(...),  # Changed to List[UploadFile]
 ):
     results = []
     errors = []
@@ -34,7 +31,7 @@ def get_multiple_transcripts(
 
     # Collect all transcripts
     for video_id in video_ids:
-        transcript, error = transcript_service.get_transcript(video_id)
+        transcript, error = video_summary_service.get_transcript(video_id)
         if transcript:
             transcript_string = json.dumps(
                 {"video_id": video_id, "transcript": transcript}
@@ -56,43 +53,43 @@ def get_multiple_transcripts(
     transript_data = None
     # print("niceee", video_ids)
     if all_transcripts:
-        combined_summary = transcript_service.generate_summary(all_transcripts)
-        summary_to_transcript_map = transcript_service.summary_to_transcript_mapping(
-            all_transcripts, combined_summary
-        )
+        user_query_match_transcript = video_summary_service.transcript_related_to_user_query("jkhkhkh",all_transcripts)
+        # summary_to_transcript_map = video_summary_service.summary_to_transcript_mapping(
+        #     all_transcripts, combined_summary
+        # )
         cleaned_transcript = re.sub(
-            r"[`\u2018\u2019\u201c\u201d]", "", summary_to_transcript_map
+            r"[`\u2018\u2019\u201c\u201d]", "", user_query_match_transcript
         )
-        combined_summary_obj = demjson3.decode(cleaned_transcript)
-        print("combined_summary_obj", combined_summary_obj)
+        user_query_match_transcript_obj = demjson3.decode(cleaned_transcript)
+        print("combined_summary_obj", user_query_match_transcript_obj)
         saved_video_paths = []
     # if all_transcripts:
     #     transript_data = transcript_service.transcript_mock_data()
     #     saved_video_paths = []
 
-        # Process each uploaded video file
-        for video_file in video_files:
-            original_filename = video_file.filename
-            temp_dir = os.path.join(os.getcwd(), "temp")
-            os.makedirs(temp_dir, exist_ok=True)
-            tmp_path = os.path.join(temp_dir, original_filename)
+        # # Process each uploaded video file
+        # for video_file in video_files:
+        #     original_filename = video_file.filename
+        #     temp_dir = os.path.join(os.getcwd(), "temp")
+        #     os.makedirs(temp_dir, exist_ok=True)
+        #     tmp_path = os.path.join(temp_dir, original_filename)
 
-            with open(tmp_path, "wb") as tmp:
-                shutil.copyfileobj(video_file.file, tmp)
-            saved_video_paths.append(tmp_path)
+        #     with open(tmp_path, "wb") as tmp:
+        #         shutil.copyfileobj(video_file.file, tmp)
+        #     saved_video_paths.append(tmp_path)
 
-        # Pass all video paths at once
-        preview_intro_clip(
-            saved_video_paths,  # Now passing list of paths
-            combined_summary_obj["mapping"],
-            video_ids,
-        )
+        # # Pass all video paths at once
+        # preview_intro_clip(
+        #     saved_video_paths,  # Now passing list of paths
+        #     combined_summary_obj["mapping"],
+        #     video_ids,
+        # )
 
     return JSONResponse(
-        content=TranscriptResponse(
+        content=VideoSummaryResponse(
             results=results,
             errors=errors,
-            combined_summary=combined_summary_obj,
+            combined_summary=user_query_match_transcript_obj,
         ).model_dump(),
         status_code=200 if results else 500,
     )

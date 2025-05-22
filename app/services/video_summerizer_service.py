@@ -23,7 +23,6 @@ class VideoSummerizerService:
 
     def transcript_related_to_user_query(
         self,
-        video_id: str,
         user_query: str,
         transcript: list[dict]
     ) -> str:
@@ -50,7 +49,7 @@ class VideoSummerizerService:
                         "matched_text": "<relevant text from transcript>",
                         "start": <start time in seconds>,
                         "duration": <duration in seconds>,
-                        "video_id": "{video_id}"
+                        "video_id": "<video_id>"
                         }}
                         // ... additional matches if relevant
                     ]
