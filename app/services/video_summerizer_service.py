@@ -1,9 +1,8 @@
 from youtube_transcript_api import YouTubeTranscriptApi
 from typing import List, Tuple, Dict
-import os
+import time
 from openai import OpenAI
 from app.config.settings import API_KEY
-import time
 
 
 class VideoSummerizerService:
@@ -11,6 +10,13 @@ class VideoSummerizerService:
         self.client = OpenAI(api_key=API_KEY)
 
     def get_transcript(self, video_id: str) -> Tuple[List[Dict], str]:
+        """
+        Retrieve the transcript for a given YouTube video.
+        Retries up to 10 times in case of transient failures.
+
+        :param video_id: YouTube video identifier
+        :return: Tuple of (transcript list, error message or None)
+        """
         for attempt in range(10):
             try:
                 transcript = YouTubeTranscriptApi.get_transcript(video_id)
@@ -18,28 +24,49 @@ class VideoSummerizerService:
             except Exception as e:
                 if attempt == 3:
                     return None, str(e)
-                time.sleep(1)  # Wait a bit before retrying
+                time.sleep(1)
 
     def transcript_related_to_user_query(
-        self, user_query: str, transcript_string: list[dict]
+        self, user_query: str, transcript_string: List[Dict]
     ) -> str:
-        # Serialize the transcript array into a compact JSON string
-        prompt = f"""
+        instructions = f"""
+                # Instructions
+
+                You are an AI assistant designed to analyze YouTube transcripts and extract relevant information based on a user's query. Follow these general rules:
+
+                - Be precise and semantically aware when matching transcript content to the user query.
+                - Select at most **one matching segment per video**.
+                - Ignore any video that does not contain relevant content.
+                - Do not repeat video IDs in the final output.
+
+                # 🧠 Understanding the Task
+
                 You are given:
-                - A `user_query`: "{user_query}". 
-                - A `youtube transcript`: An array of segments. Each segment includes:
-                    • "text": a phrase or sentence from the video,
-                    • "start": the timestamp (in seconds) when the speech begins,
-                    • "duration": how long the speech lasted (in seconds),
-                    • "video_id": the unique identifier of the video.
+                - A `user_query`.
+                - A list of YouTube transcript segments. Each segment contains:
+                • "text": a phrase or sentence from the video  
+                • "start": when the speech begins (in seconds)  
+                • "duration": how long the speech lasted (in seconds)  
+                • "video_id": a unique video identifier  
 
-                Your task:
-                1. Understand the user's intent from the `user_query`.
-                2. Search through the transcripts and identify segments that meaningfully answer or relate to the query (based on semantic relevance, not just keyword matching).
-                3. Ensure the output includes **at least one matching segment from each unique video_id**.
-                4. Do **not include duplicate video IDs** in the results.
-                5. Format your response exactly , using this structure:
+                Here is the transcript data:
+                {transcript_string}
 
+                # ✅ Workflow: Follow These Steps
+
+                1. **Understand the user query.**  
+                Identify what kind of response is expected: e.g., explanation, summary, how-to, opinion, etc.
+
+                2. **Analyze the transcript by video_id.**  
+                For each unique video ID:
+                - Search for segments that **semantically relate** to the user query.
+                - If relevant segments are found, choose **the best one** (most representative).
+                - Skip the video if no segment is relevant.
+
+                3. **Format the final response.**  
+                Return the result in **strict JSON format** as follows:
+
+                ```json
                 {{
                 "transcript": [
                     {{
@@ -48,22 +75,18 @@ class VideoSummerizerService:
                     "duration": <duration in seconds>,
                     "video_id": "<video_id>"
                     }}
-                    // ... additional matches
+                    // ... one entry per relevant video
                 ]
-                }}
+                }}"""
 
-                Here is the transcript data to evaluate:
-                {transcript_string}
-                """
+        input_text = f"User query: {user_query}"
 
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-4.1-mini",  # or "gpt-4", "gpt-3.5-turbo", etc.
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": prompt},
-                ],
+            response = self.client.responses.create(
+                model="gpt-4.1-2025-04-14",
+                instructions=instructions,
+                input=input_text,
             )
-            return response.choices[0].message.content
+            return response.text
         except Exception as e:
             return f"Error generating structured summary: {str(e)}"
