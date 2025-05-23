@@ -35,8 +35,7 @@ class VideoSummerizerService:
                 You are an AI assistant designed to analyze YouTube transcripts and extract relevant information based on a user's query. Follow these general rules:
 
                 - Be precise and semantically aware when matching transcript content to the user query.
-                - Select at most **one matching segment per video**.
-                - Ignore any video that does not contain relevant content.
+                - Select  matching segment per video.
                 - Do not repeat video IDs in the final output.
 
                 # Understanding the Task
@@ -55,13 +54,13 @@ class VideoSummerizerService:
                 # Workflow: Follow These Steps
 
                 1. **Understand the user query.**  
-                -Determine what type of information the user is asking for
+                -Determine what type of information the user is asking for.
 
-                2. **Analyze the transcript by video_id.**  
+                2. **Analyze the transcript by video_id for relevant information based on a user's query**  
                 For each unique video ID:
                 - Search for segments that **semantically relate** to the user query.
-                - If relevant segments are found, choose **the best one** (most representative).
-                - Skip the video if no segment is relevant.
+                - Ensure the output includes **at least one matching segment from each unique video_id**.
+                - Do **not include duplicate video IDs** in the results.
 
                 3. **Format the final response.**  
                 Return the result in **strict JSON format** as follows:
@@ -77,7 +76,11 @@ class VideoSummerizerService:
                     }}
                     // ... one entry per relevant video
                 ]
-                }}"""
+                }}  
+                
+                # Your thinking should be thorough. You can think step by step before and after each action you decide to take.
+                #You MUST iterate and keep going until the problem is solved.
+                """
 
         input_text = f"User query: {user_query}"
 
