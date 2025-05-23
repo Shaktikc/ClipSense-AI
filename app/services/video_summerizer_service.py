@@ -39,7 +39,8 @@ class VideoSummerizerService:
                     1. Understand the user's intent from the `user_query`.
                     2. Identify the transcript segments that best answer or relate to the query (semantic relevance, not just keyword match).
                     3. Return **only** the top matching segments.
-                    4. Format your response exactly , using this structure:
+                    4.Make sure to take from every video transcript,dont repeat the same video transcript.
+                    5. Format your response exactly , using this structure:
 
                     {{
                     "transcript": [
