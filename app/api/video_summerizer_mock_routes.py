@@ -49,12 +49,12 @@ def get_youtube_videos_summary(
 
     if all_transcripts:
         user_query_match_transcript = video_summary_service.transcript_related_to_user_query("why i shouldnt buy iPhone 16?",all_transcripts)
-
+        print("combined_summary_obj", user_query_match_transcript)
         cleaned_transcript = re.sub(
             r"[`\u2018\u2019\u201c\u201d]", "", user_query_match_transcript
         )
         user_query_match_transcript_obj = demjson3.decode(cleaned_transcript)
-        print("combined_summary_obj", user_query_match_transcript_obj)
+
         saved_video_paths = []
 
     if all_transcripts:
