@@ -20,44 +20,42 @@ class VideoSummerizerService:
                     return None, str(e)
                 time.sleep(1)  # Wait a bit before retrying
 
-
     def transcript_related_to_user_query(
-        self,
-        user_query: str,
-        transcript_string: list[dict]
+        self, user_query: str, transcript_string: list[dict]
     ) -> str:
         # Serialize the transcript array into a compact JSON string
         prompt = f"""
-                    You are given:
-                    - A `user_query`: "{user_query}". 
-                    - A `youtube transcript`:Each transcript contains:
-                        • "text": a phrase or sentence from the video,
-                        • "start":the timestamp (in seconds) when the speech begins,
-                        • "duration": how long the speech lasted.
+                You are given:
+                - A `user_query`: "{user_query}". 
+                - A `youtube transcript`: An array of segments. Each segment includes:
+                    • "text": a phrase or sentence from the video,
+                    • "start": the timestamp (in seconds) when the speech begins,
+                    • "duration": how long the speech lasted (in seconds),
+                    • "video_id": the unique identifier of the video.
 
-                    Your task:
-                    1. Understand the user's intent from the `user_query`.
-                    2. Identify the transcript segments that best answer or relate to the query (semantic relevance, not just keyword match).
-                    3. Return **only** the top matching segments.
-                    4.Make sure to take from every video transcript,dont repeat the same video transcript.
-                    5. Format your response exactly , using this structure:
+                Your task:
+                1. Understand the user's intent from the `user_query`.
+                2. Search through the transcripts and identify segments that meaningfully answer or relate to the query (based on semantic relevance, not just keyword matching).
+                3. Return **at most one relevant segment per unique `video_id`**, and **only if the video has a meaningful answer** to the query.
+                4. Do **not include duplicate video IDs** in the results.
+                5. Format your response exactly , using this structure:
 
+                {{
+                "transcript": [
                     {{
-                    "transcript": [
-                        {{
-                        "matched_text": "<relevant text from transcript>",
-                        "start": <start time in seconds>,
-                        "duration": <duration in seconds>,
-                        "video_id": "<video_id>"
-                        }}
-                        // ... additional matches if relevant
-                    ]
+                    "matched_text": "<relevant text from transcript>",
+                    "start": <start time in seconds>,
+                    "duration": <duration in seconds>,
+                    "video_id": "<video_id>"
                     }}
-                            
-                    Here is the transcript to find best answer, relate to the user_query:
-                    {transcript_string}
-                    """
-        
+                    // ... additional matches
+                ]
+                }}
+
+                Here is the transcript data to evaluate:
+                {transcript_string}
+                """
+
         try:
             response = self.client.chat.completions.create(
                 model="gpt-4.1-mini",  # or "gpt-4", "gpt-3.5-turbo", etc.
@@ -69,4 +67,3 @@ class VideoSummerizerService:
             return response.choices[0].message.content
         except Exception as e:
             return f"Error generating structured summary: {str(e)}"
-       
