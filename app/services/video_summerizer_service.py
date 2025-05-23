@@ -39,7 +39,7 @@ class VideoSummerizerService:
                 - Ignore any video that does not contain relevant content.
                 - Do not repeat video IDs in the final output.
 
-                # 🧠 Understanding the Task
+                # Understanding the Task
 
                 You are given:
                 - A `user_query`.
@@ -55,7 +55,7 @@ class VideoSummerizerService:
                 # Workflow: Follow These Steps
 
                 1. **Understand the user query.**  
-                Identify what kind of response is expected: e.g., explanation, summary, how-to, opinion, etc.
+                -Determine what type of information the user is asking for
 
                 2. **Analyze the transcript by video_id.**  
                 For each unique video ID:
