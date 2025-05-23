@@ -32,13 +32,13 @@ class VideoSummerizerService:
         instructions = f"""
                 # Instructions
 
-                You are an AI assistant designed to analyze YouTube transcripts and extract relevant information based on a user's query. Follow these general rules:
+                You are an AI assistant designed to analyze YouTube transcripts and extract relevant information based on a user's query. 
 
-                - Be precise and semantically aware when matching transcript content to the user query.
-                - Select  matching segment per video.
-                - Do not repeat video IDs in the final output.
+                You must Be precise and semantically aware when matching transcript content to the user query.
+                You must Select  matching segment from all the  transcript with unique video_id.
+                You must not repeat same video_id in the final output .
 
-                # Understanding the Task
+                # Workflow:
 
                 You are given:
                 - A `user_query`.
@@ -51,19 +51,19 @@ class VideoSummerizerService:
                 Here is the transcript data:
                 {transcript_string}
 
-                # Workflow: Follow These Steps
+                Follow These Steps
 
-                1. **Understand the user query.**  
+                ## 1.Understand the user query.
                 -Determine what type of information the user is asking for.
 
-                2. **Analyze the transcript by video_id for relevant information based on a user's query**  
+               ## 2.Analyze the transcript by video_id for relevant information based on a user's query.
                 For each unique video ID:
-                - Search for segments that **semantically relate** to the user query.
-                - Ensure the output includes **at least one matching segment from each unique video_id**.
-                - Do **not include duplicate video IDs** in the results.
+                - Search for segments that semantically relate to the user query.
+                - Ensure the output includes at least one matching segment from each unique video_id.
+                - Do not include duplicate video_id in the results.
 
-                3. **Format the final response.**  
-                Return the result in **strict JSON format** as follows:
+               ## 3. Format the final response.
+                Return the result in strict JSON format as follows:
 
                 
                 {{
@@ -78,8 +78,11 @@ class VideoSummerizerService:
                 ]
                 }}  
                 
-                # Your thinking should be thorough. You can think step by step before and after each action you decide to take.
-                #You MUST iterate and keep going until the problem is solved.
+                ## 4. Final Verification
+                     - verify each segment is semantically relate to the user query.
+                     - verify  the output includes at least one matching segment from each unique video_id.
+                     - verify  no duplicate video_id in the results.
+                     - Iterate until you are extremely confident every step is followed.
                 """
 
         input_text = f"User query: {user_query}"
