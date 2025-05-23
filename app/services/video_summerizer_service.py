@@ -66,7 +66,7 @@ class VideoSummerizerService:
                 3. **Format the final response.**  
                 Return the result in **strict JSON format** as follows:
 
-                ```json
+                
                 {{
                 "transcript": [
                     {{
@@ -83,10 +83,11 @@ class VideoSummerizerService:
 
         try:
             response = self.client.responses.create(
-                model="gpt-4.1-2025-04-14",
+                model="gpt-4.1-mini",
                 instructions=instructions,
                 input=input_text,
             )
-            return response.text
+            print("Response from OpenAI:", response.to_dict()["output"][0]["content"][0]["text"])
+            return response.to_dict()["output"][0]["content"][0]["text"]
         except Exception as e:
             return f"Error generating structured summary: {str(e)}"
