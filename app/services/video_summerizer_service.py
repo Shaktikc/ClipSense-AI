@@ -52,7 +52,7 @@ class VideoSummerizerService:
                 Here is the transcript data:
                 {transcript_string}
 
-                # ✅ Workflow: Follow These Steps
+                # Workflow: Follow These Steps
 
                 1. **Understand the user query.**  
                 Identify what kind of response is expected: e.g., explanation, summary, how-to, opinion, etc.
