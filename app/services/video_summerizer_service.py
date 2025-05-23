@@ -36,7 +36,7 @@ class VideoSummerizerService:
                 Your task:
                 1. Understand the user's intent from the `user_query`.
                 2. Search through the transcripts and identify segments that meaningfully answer or relate to the query (based on semantic relevance, not just keyword matching).
-                3. Return **at most one relevant segment per unique `video_id`**, and **only if the video has a meaningful answer** to the query.
+                3. Ensure the output includes **at least one matching segment from each unique video_id**.
                 4. Do **not include duplicate video IDs** in the results.
                 5. Format your response exactly , using this structure:
 
