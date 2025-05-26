@@ -35,8 +35,7 @@ class VideoSummerizerService:
                 You are an AI assistant designed to analyze YouTube transcripts and extract relevant information based on a user's query. 
 
                 You must Be precise and semantically aware when matching transcript content to the user query.
-                You must Select  matching segment from all the  transcript with unique video_id.
-                You must not repeat same video_id in the final output .
+
 
                 # Workflow:
 
@@ -46,7 +45,6 @@ class VideoSummerizerService:
                 • "text": a phrase or sentence from the video  
                 • "start": when the speech begins (in seconds)  
                 • "duration": how long the speech lasted (in seconds)  
-                • "video_id": a unique video identifier  
 
                 Here is the transcript data:
                 {transcript_string}
@@ -56,11 +54,8 @@ class VideoSummerizerService:
                 ## 1.Understand the user query.
                 -Determine what type of information the user is asking for.
 
-               ## 2.Analyze the transcript by video_id for relevant information based on a user's query.
-                For each unique video ID:
+               ## 2.Analyze the transcript for relevant information based on a user's query.
                 - Search for segments that semantically relate to the user query.
-                - Ensure the output includes at least one matching segment from each unique video_id.
-                - Do not include duplicate video_id in the results.
 
                ## 3. Format the final response.
                 Return the result in strict JSON format as follows:
@@ -78,17 +73,8 @@ class VideoSummerizerService:
                 ]
                 }}  
 
-
-                ## 4. Testing
-                - Test each segment is semantically relate to the user query.
-                - Test  the output includes at least one matching segment from each unique video_id.
-                - Test  no duplicate video_id in the results.
-                - Ensure all tests pass before finalizing.
-                
-                ## 5. Final Verification
+                ## 4. Final Verification
                 - verify each segment is semantically relate to the user query.
-                - verify  the output includes at least one matching segment from each unique video_id.
-                - verify  no duplicate video_id in the results.
                 - Iterate until you are extremely confident every step is followed.
                 """
 

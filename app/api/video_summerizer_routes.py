@@ -47,15 +47,27 @@ def get_youtube_videos_summary(
 
     # print(all_transcripts)
 
-    if all_transcripts:
-        user_query_match_transcript = video_summary_service.transcript_related_to_user_query("why i shouldnt buy iPhone 16?",all_transcripts)
-
-        cleaned_transcript = re.sub(
-            r"[`\u2018\u2019\u201c\u201d]", "", user_query_match_transcript
+    # For each video_id, run transcript_related_to_user_query separately
+    user_query_match_transcript_objs = []
+    for video_id in video_ids:
+        # Find the transcript for this video_id
+        transcript_json = next(
+            (json.loads(t) for t in all_transcripts if json.loads(t)["video_id"] == video_id),
+            None,
         )
-        user_query_match_transcript_obj = demjson3.decode(cleaned_transcript)
-        print("combined_summary_obj", user_query_match_transcript_obj)
-        saved_video_paths = []
+        if transcript_json:
+            user_query_match_transcript = video_summary_service.transcript_related_to_user_query(
+                "why i shouldnt buy iPhone 16?", [json.dumps(transcript_json)]
+            )
+            cleaned_transcript = re.sub(
+                r"[`\u2018\u2019\u201c\u201d]", "", user_query_match_transcript
+            )
+            user_query_match_transcript_obj = demjson3.decode(cleaned_transcript)
+            user_query_match_transcript_objs.append(user_query_match_transcript_obj)
+        else:
+            user_query_match_transcript_objs.append({"video_id": video_id, "error": "Transcript not found"})
+    print("user_query_match_transcript_objs", user_query_match_transcript_objs)
+    saved_video_paths = []
 
     if all_transcripts:
         # Process each uploaded video file
@@ -72,7 +84,7 @@ def get_youtube_videos_summary(
         # Pass all video paths at once
         mergedVideo_for_user_query(
             saved_video_paths,  # Now passing list of paths
-            user_query_match_transcript_obj,
+            user_query_match_transcript_objs,
             video_ids,
         )
 
@@ -80,7 +92,7 @@ def get_youtube_videos_summary(
         content=VideoSummaryResponse(
             results=results,
             errors=errors,
-            transcript_related_to_user_query=user_query_match_transcript_obj,
+            transcript_related_to_user_query=user_query_match_transcript_objs,
         ).model_dump(),
         status_code=200 if results else 500,
     )
