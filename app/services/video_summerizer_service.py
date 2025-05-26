@@ -77,12 +77,19 @@ class VideoSummerizerService:
                     // ... one entry per relevant video
                 ]
                 }}  
+
+
+                ## 4. Testing
+                - Test each segment is semantically relate to the user query.
+                - Test  the output includes at least one matching segment from each unique video_id.
+                - Test  no duplicate video_id in the results.
+                - Ensure all tests pass before finalizing.
                 
-                ## 4. Final Verification
-                     - verify each segment is semantically relate to the user query.
-                     - verify  the output includes at least one matching segment from each unique video_id.
-                     - verify  no duplicate video_id in the results.
-                     - Iterate until you are extremely confident every step is followed.
+                ## 5. Final Verification
+                - verify each segment is semantically relate to the user query.
+                - verify  the output includes at least one matching segment from each unique video_id.
+                - verify  no duplicate video_id in the results.
+                - Iterate until you are extremely confident every step is followed.
                 """
 
         input_text = f"User query: {user_query}"
@@ -93,7 +100,10 @@ class VideoSummerizerService:
                 instructions=instructions,
                 input=input_text,
             )
-            print("Response from OpenAI:", response.to_dict()["output"][0]["content"][0]["text"])
+            print(
+                "Response from OpenAI:",
+                response.to_dict()["output"][0]["content"][0]["text"],
+            )
             return response.to_dict()["output"][0]["content"][0]["text"]
         except Exception as e:
             return f"Error generating structured summary: {str(e)}"
