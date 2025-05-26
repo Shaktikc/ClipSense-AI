@@ -5,10 +5,11 @@ from typing import List, Dict
 
 
 def mergedVideo_for_user_query(
-    saved_video_paths: List[str], user_query_match: dict, video_ids: List[str]
+    saved_video_paths: List[str], user_query_match: list, video_ids: List[str]
 ):
     """
     Loads videos, extracts subclips based on transcript matches, and merges them.
+    Now supports a list of transcript match objects (one per video).
     """
     videos: Dict[str, VideoFileClip] = {}  # Store videos with their IDs as keys
     clips: List[VideoFileClip] = []  # Store subclips to be merged
@@ -24,26 +25,28 @@ def mergedVideo_for_user_query(
             print(f"Error loading video {video_name}: {str(e)}")
 
     try:
-        # Process each transcript segment
-        for segment in user_query_match.get("transcript", []):
-            video_id = segment["video_id"]
-            # Only process if video ID exists in loaded videos
-            if video_id in videos:
-                start = segment["start"]
-                duration = segment["duration"]
-                end = start + duration
-                video_duration = videos[video_id].duration
-                
-                # Clamp end time to video duration
-                if end > video_duration:
-                    end = video_duration
-                
-                if start < end:  # Only process valid time ranges
-                    print(
-                        f"Processing clip for {video_id} - Start: {start}, End: {end}"
-                    )
-                    clip = videos[video_id].subclipped(start, end)
-                    clips.append(clip)
+        # Iterate through each transcript match object (one per video)
+        for match_obj in user_query_match:
+            transcript_segments = match_obj.get("transcript", [])
+            for segment in transcript_segments:
+                video_id = segment["video_id"]
+                # Only process if video ID exists in loaded videos
+                if video_id in videos:
+                    start = segment["start"]
+                    duration = segment["duration"]
+                    end = start + duration
+                    video_duration = videos[video_id].duration
+
+                    # Clamp end time to video duration
+                    if end > video_duration:
+                        end = video_duration
+
+                    if start < end:  # Only process valid time ranges
+                        print(
+                            f"Processing clip for {video_id} - Start: {start}, End: {end}"
+                        )
+                        clip = videos[video_id].subclipped(start, end)
+                        clips.append(clip)
 
         # Merge clips if any were created
         if clips:
