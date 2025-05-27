@@ -10,6 +10,7 @@ class VideoSummerizerService:
         self.client = OpenAI(api_key=API_KEY)
 
     def get_transcript(self, video_id: str) -> Tuple[List[Dict], str]:
+        
         """
         Retrieve the transcript for a given YouTube video.
         Retries up to 10 times in case of transient failures.
