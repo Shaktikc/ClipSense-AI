@@ -4,8 +4,7 @@ import numpy as np
 from typing import List, Dict
 from pytube import YouTube
 
-# Font path for TextClip
-FONT_PATH = os.path.join(os.path.dirname(__file__), "..", "assets", "fonts", "OpenSans-Regular.ttf")
+
 
 def mergedVideo_userQuery_service(
     saved_video_paths: List[str], user_query_match: list, video_ids: List[str]
@@ -25,7 +24,7 @@ def mergedVideo_userQuery_service(
             channel_names[video_id] = yt.author
         except Exception as e:
             channel_names[video_id] = "Unknown Source"
-
+    print("Channel names extracted:", channel_names)
     # Load all videos first
     for video_path in saved_video_paths:
         video_name = os.path.splitext(os.path.basename(video_path))[0]
