@@ -1,10 +1,11 @@
 import os
-from moviepy import VideoFileClip, CompositeVideoClip, concatenate_videoclips
+from moviepy import VideoFileClip, CompositeVideoClip, concatenate_videoclips, TextClip
 import numpy as np
 from typing import List, Dict
 from pytube import YouTube
-from moviepy import TextClip, CompositeVideoClip
 
+# Font path for TextClip
+FONT_PATH = os.path.join(os.path.dirname(__file__), "..", "assets", "fonts", "OpenSans-Regular.ttf")
 
 def mergedVideo_for_user_query(
     saved_video_paths: List[str], user_query_match: list, video_ids: List[str]
@@ -16,6 +17,7 @@ def mergedVideo_for_user_query(
     videos: Dict[str, VideoFileClip] = {}  # Store videos with their IDs as keys
     clips: List[VideoFileClip] = []  # Store subclips to be merged
     channel_names = {}
+    
     # Extract channel names for each video_id
     for video_id in video_ids:
         try:
@@ -55,26 +57,26 @@ def mergedVideo_for_user_query(
                         print(
                             f"Processing clip for {video_id} - Start: {start}, End: {end}"
                         )
-                        clip = videos[video_id].subclipped(start, end)
+                        clip = videos[video_id].subclipped(start, end)  # Changed from subclipped to subclip
                         # Overlay channel name as text at the top left
                         channel_text = channel_names.get(video_id, "Unknown Source")
-                        txt_clip = (
-                            TextClip(
-                                f"Source: {channel_text}",
-                                fontsize=24,
-                                color="white",
-                                bg_color="black",
-                            )
-                            .set_position((10, 10))
-                            .set_duration(clip.duration)
-                        )
+                        txt_clip = TextClip(
+                            text=f"Source: {channel_text}",
+                            font="C:/Windows/Fonts/arial.ttf",
+                            font_size=30,
+                            color="white",
+                            bg_color="black",
+                            method="caption",
+                            size=(clip.w, None)  # Match video width, auto-height
+                        ).with_position((10, 10)).with_duration(clip.duration)
+                        
                         composite = CompositeVideoClip([clip, txt_clip])
                         clips.append(composite)
 
         # Merge clips if any were created
         if clips:
             final_video = concatenate_videoclips(clips)
-            final_video.write_videofile("merged.mp4")
+            final_video.write_videofile("merged.mp4", fps=24)  # Added fps parameter
             print("Successfully created merged.mp4")
 
     finally:
