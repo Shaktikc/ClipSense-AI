@@ -7,7 +7,7 @@ from app.models.schemas import (
     ErrorResult,
 )
 from app.services.video_summerizer_service import VideoSummerizerService
-from app.services.mergedVideo_for_user_query import mergedVideo_for_user_query
+from app.services.mergedVideo_userQuery_service import mergedVideo_userQuery_service
 import json
 import demjson3
 import re
@@ -82,7 +82,7 @@ def get_youtube_videos_summary(
             saved_video_paths.append(tmp_path)
 
         # Pass all video paths at once
-        mergedVideo_for_user_query(
+        mergedVideo_userQuery_service.py(
             saved_video_paths,  # Now passing list of paths
             user_query_match_transcript_objs,
             video_ids,

@@ -7,7 +7,7 @@ from app.models.schemas import (
     ErrorResult,
 )
 from app.services.video_summerizer_service import VideoSummerizerService
-from app.services.mergedVideo_for_user_query import mergedVideo_for_user_query
+from app.services.mergedVideo_userQuery_service import mergedVideo_for_user_query
 import json
 import demjson3
 import re

@@ -7,7 +7,7 @@ from pytube import YouTube
 # Font path for TextClip
 FONT_PATH = os.path.join(os.path.dirname(__file__), "..", "assets", "fonts", "OpenSans-Regular.ttf")
 
-def mergedVideo_for_user_query(
+def mergedVideo_userQuery_service(
     saved_video_paths: List[str], user_query_match: list, video_ids: List[str]
 ):
     """
