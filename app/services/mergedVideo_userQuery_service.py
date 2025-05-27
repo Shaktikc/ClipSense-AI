@@ -2,7 +2,7 @@ import os
 from moviepy import VideoFileClip, CompositeVideoClip, concatenate_videoclips, TextClip
 import numpy as np
 from typing import List, Dict
-from pytube import YouTube
+import yt_dlp
 
 
 
@@ -17,14 +17,25 @@ def mergedVideo_userQuery_service(
     clips: List[VideoFileClip] = []  # Store subclips to be merged
     channel_names = {}
     
-    # Extract channel names for each video_id
-    for video_id in video_ids:
-        try:
-            yt = YouTube(f"https://www.youtube.com/watch?v={video_id}")
-            channel_names[video_id] = yt.author
-        except Exception as e:
-            channel_names[video_id] = "Unknown Source"
+    # Extract channel names for each video_id using yt-dlp
+    ydl_opts = {
+        'quiet': True,
+        'extract_flat': True,
+        'force_generic_extractor': True,
+        'no_warnings': True,
+    }
+    
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        for video_id in video_ids:
+            try:
+                info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
+                channel_names[video_id] = info.get('uploader', 'Unknown Source')
+            except Exception as e:
+                channel_names[video_id] = "Unknown Source"
+                print(f"Error getting channel name for {video_id}: {str(e)}")
+    
     print("Channel names extracted:", channel_names)
+
     # Load all videos first
     for video_path in saved_video_paths:
         video_name = os.path.splitext(os.path.basename(video_path))[0]
