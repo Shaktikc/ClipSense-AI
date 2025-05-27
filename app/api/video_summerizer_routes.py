@@ -82,7 +82,7 @@ def get_youtube_videos_summary(
             saved_video_paths.append(tmp_path)
 
         # Pass all video paths at once
-        mergedVideo_userQuery_service.py(
+        mergedVideo_userQuery_service(
             saved_video_paths,  # Now passing list of paths
             user_query_match_transcript_objs,
             video_ids,
