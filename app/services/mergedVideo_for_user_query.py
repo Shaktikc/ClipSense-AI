@@ -2,6 +2,8 @@ import os
 from moviepy import VideoFileClip, CompositeVideoClip, concatenate_videoclips
 import numpy as np
 from typing import List, Dict
+from pytube import YouTube
+from moviepy import TextClip, CompositeVideoClip
 
 
 def mergedVideo_for_user_query(
@@ -13,6 +15,14 @@ def mergedVideo_for_user_query(
     """
     videos: Dict[str, VideoFileClip] = {}  # Store videos with their IDs as keys
     clips: List[VideoFileClip] = []  # Store subclips to be merged
+    channel_names = {}
+    # Extract channel names for each video_id
+    for video_id in video_ids:
+        try:
+            yt = YouTube(f"https://www.youtube.com/watch?v={video_id}")
+            channel_names[video_id] = yt.author
+        except Exception as e:
+            channel_names[video_id] = "Unknown Source"
 
     # Load all videos first
     for video_path in saved_video_paths:
@@ -46,7 +56,20 @@ def mergedVideo_for_user_query(
                             f"Processing clip for {video_id} - Start: {start}, End: {end}"
                         )
                         clip = videos[video_id].subclipped(start, end)
-                        clips.append(clip)
+                        # Overlay channel name as text at the top left
+                        channel_text = channel_names.get(video_id, "Unknown Source")
+                        txt_clip = (
+                            TextClip(
+                                f"Source: {channel_text}",
+                                fontsize=24,
+                                color="white",
+                                bg_color="black",
+                            )
+                            .set_position((10, 10))
+                            .set_duration(clip.duration)
+                        )
+                        composite = CompositeVideoClip([clip, txt_clip])
+                        clips.append(composite)
 
         # Merge clips if any were created
         if clips:
