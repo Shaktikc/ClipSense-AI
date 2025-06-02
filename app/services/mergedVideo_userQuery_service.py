@@ -1,95 +1,136 @@
 import os
-from moviepy import VideoFileClip, CompositeVideoClip, concatenate_videoclips, TextClip
-import numpy as np
+import subprocess
 from typing import List, Dict
 import yt_dlp
+import tempfile
+import uuid
+import sys
+import re
 
+
+def get_ffmpeg_path():
+    """Get the FFmpeg executable path"""
+    if getattr(sys, 'frozen', False):
+        return os.path.join(sys._MEIPASS, 'ffmpeg.exe')
+    else:
+        possible_paths = [
+            "ffmpeg",
+            r"C:\Program Files\ffmpeg\bin\ffmpeg.exe",
+            r"C:\ffmpeg\bin\ffmpeg.exe",
+            os.path.join(os.path.dirname(__file__), "..", "assets", "ffmpeg", "ffmpeg.exe")
+        ]
+        for path in possible_paths:
+            if path == "ffmpeg":
+                try:
+                    subprocess.run([path, "-version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    return path
+                except FileNotFoundError:
+                    continue
+            elif os.path.isfile(path):
+                return path
+        raise FileNotFoundError(
+            "FFmpeg not found. Please install FFmpeg from https://ffmpeg.org/download.html "
+            "and add it to your system PATH, or place ffmpeg.exe in one of the expected locations."
+        )
+
+
+def escape_ffmpeg_text(text: str) -> str:
+    """Escape special characters for ffmpeg drawtext filter"""
+    text = text.replace('\\', '\\\\')  # Escape backslashes
+    text = text.replace(':', '\\:')    # Escape colons
+    text = text.replace("'", "\\'")    # Escape single quotes
+    return text
 
 
 def mergedVideo_userQuery_service(
     saved_video_paths: List[str], user_query_match: list, video_ids: List[str]
 ):
-    """
-    Loads videos, extracts subclips based on transcript matches, and merges them.
-    Now supports a list of transcript match objects (one per video).
-    """
-    videos: Dict[str, VideoFileClip] = {}  # Store videos with their IDs as keys
-    clips: List[VideoFileClip] = []  # Store subclips to be merged
+    try:
+        ffmpeg_path = get_ffmpeg_path()
+    except FileNotFoundError as e:
+        print(str(e))
+        return
+
+    temp_dir = tempfile.mkdtemp()
+    clips_paths = []
     channel_names = {}
-    
-    # Extract channel names for each video_id using yt-dlp
+    arial_font = r"C:\Windows\Fonts\arial.ttf"
+
     ydl_opts = {
         'quiet': True,
         'extract_flat': True,
         'force_generic_extractor': True,
         'no_warnings': True,
     }
-    
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         for video_id in video_ids:
             try:
                 info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
                 channel_names[video_id] = info.get('uploader', 'Unknown Source')
             except Exception as e:
+                print(f"Error fetching channel for {video_id}: {e}")
                 channel_names[video_id] = "Unknown Source"
-                print(f"Error getting channel name for {video_id}: {str(e)}")
-    
+
     print("Channel names extracted:", channel_names)
 
-    # Load all videos first
-    for video_path in saved_video_paths:
-        video_name = os.path.splitext(os.path.basename(video_path))[0]
+    for match_obj in user_query_match:
+        transcript_segments = match_obj.get("transcript", [])
+        for segment in transcript_segments:
+            video_id = segment["video_id"]
+            start = segment["start"]
+            duration = segment["duration"]
+
+            matching_video = next((path for path in saved_video_paths if video_id in path), None)
+            if not matching_video:
+                continue
+
+            output_path = os.path.join(temp_dir, f"{uuid.uuid4()}.mp4")
+            raw_channel = channel_names.get(video_id, "Unknown Source")
+            channel_text = escape_ffmpeg_text(f"Source: {raw_channel}")
+            escaped_font = arial_font.replace("\\", "/")
+            # Escape drive letter for FFmpeg (C:/... -> C\:/...)
+            if len(escaped_font) > 1 and escaped_font[1] == ':':
+                escaped_font = escaped_font[0] + '\\:' + escaped_font[2:]
+
+            cmd = [
+                ffmpeg_path, "-y",
+                "-ss", str(start),
+                "-t", str(duration),
+                "-i", matching_video,
+                "-vf", f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=24:fontcolor=white:box=1:boxcolor=black@0.7:x=10:y=10",
+                "-c:v", "libx264",
+                "-preset", "ultrafast",
+                "-crf", "23",
+                "-c:a", "copy",
+                output_path
+            ]
+
+            try:
+                subprocess.run(cmd, check=True)
+                clips_paths.append(output_path)
+            except subprocess.CalledProcessError as e:
+                print(f"Error processing clip from {matching_video}: {e}")
+                print("Command used:", " ".join(cmd))
+
+    if clips_paths:
+        concat_list = os.path.join(temp_dir, "inputs.txt")
+        with open(concat_list, "w") as f:
+            for clip_path in clips_paths:
+                f.write(f"file '{clip_path}'\n")
+
+        output_final = "merged.mp4"
+        concat_cmd = [
+            ffmpeg_path, "-y",
+            "-f", "concat",
+            "-safe", "0",
+            "-i", concat_list,
+            "-c", "copy",
+            output_final
+        ]
         try:
-            video = VideoFileClip(video_path)
-            videos[video_name] = video
-            print(f"Loaded video: {video_name}")
-        except Exception as e:
-            print(f"Error loading video {video_name}: {str(e)}")
-
-    try:
-        # Iterate through each transcript match object (one per video)
-        for match_obj in user_query_match:
-            transcript_segments = match_obj.get("transcript", [])
-            for segment in transcript_segments:
-                video_id = segment["video_id"]
-                # Only process if video ID exists in loaded videos
-                if video_id in videos:
-                    start = segment["start"]
-                    duration = segment["duration"]
-                    end = start + duration
-                    video_duration = videos[video_id].duration
-
-                    # Clamp end time to video duration
-                    if end > video_duration:
-                        end = video_duration
-
-                    if start < end:  # Only process valid time ranges
-                        print(
-                            f"Processing clip for {video_id} - Start: {start}, End: {end}"
-                        )
-                        clip = videos[video_id].subclipped(start, end)  # Changed from subclipped to subclip
-                        # Overlay channel name as text at the top left
-                        channel_text = channel_names.get(video_id, "Unknown Source")
-                        txt_clip = TextClip(
-                            text=f"Source: {channel_text}",
-                            font="C:/Windows/Fonts/arial.ttf",
-                            font_size=30,
-                            color="white",
-                            bg_color="black",
-                            method="caption",
-                            size=(clip.w, None)  # Match video width, auto-height
-                        ).with_position((10, 10)).with_duration(clip.duration)
-                        
-                        composite = CompositeVideoClip([clip, txt_clip])
-                        clips.append(composite)
-
-        # Merge clips if any were created
-        if clips:
-            final_video = concatenate_videoclips(clips)
-            final_video.write_videofile("merged.mp4", fps=24)  # Added fps parameter
-            print("Successfully created merged.mp4")
-
-    finally:
-        # Clean up
-        for video in videos.values():
-            video.close()
+            subprocess.run(concat_cmd, check=True)
+            print("✅ Successfully created merged.mp4")
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Error concatenating clips: {e}")
+            print("Command used:", " ".join(concat_cmd))
