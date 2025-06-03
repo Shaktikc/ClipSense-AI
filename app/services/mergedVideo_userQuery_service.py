@@ -99,7 +99,7 @@ def mergedVideo_userQuery_service(
                 "-ss", str(start),
                 "-t", str(duration),
                 "-i", matching_video,
-                "-vf", f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=24:fontcolor=white:box=1:boxcolor=black@0.7:x=10:y=10",
+                "-vf", f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=12:fontcolor=white:x=w-tw-10:y=h-th-10",
                 "-c:v", "libx264",
                 "-preset", "ultrafast",
                 "-crf", "23",
