@@ -57,7 +57,7 @@ def get_youtube_videos_summary(
         )
         if transcript_json:
             user_query_match_transcript = video_summary_service.transcript_related_to_user_query(
-                "why i shouldnt buy iPhone 16?", [json.dumps(transcript_json)]
+                "why i should not  buy samsung S25 Edge?", [json.dumps(transcript_json)]
             )
             cleaned_transcript = re.sub(
                 r"[`\u2018\u2019\u201c\u201d]", "", user_query_match_transcript

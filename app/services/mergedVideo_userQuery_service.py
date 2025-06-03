@@ -99,7 +99,7 @@ def mergedVideo_userQuery_service(
                 "-ss", str(start),
                 "-t", str(duration),
                 "-i", matching_video,
-                "-vf", f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=12:fontcolor=white:x=w-tw-10:y=h-th-10",
+                "-vf", f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=24:fontcolor=white:x=w-tw-10:y=h-th-10",
                 # GPU encoding (NVIDIA)
                 "-c:v", "h264_nvenc",  # Use NVIDIA encoder
                 "-preset", "p1",        # Fast preset for NVENC
@@ -140,15 +140,15 @@ def mergedVideo_userQuery_service(
             "-safe", "0",
             "-i", concat_list,
             # GPU encoding (NVIDIA)
-            "-c:v", "h264_nvenc",    # Use NVIDIA encoder
-            "-preset", "p3",         # Higher quality preset for final output
-            "-rc:v", "vbr",
-            "-cq:v", "23",
-            "-b:v", "8M",           # Higher bitrate for final output
+            # "-c:v", "h264_nvenc",    # Use NVIDIA encoder
+            # "-preset", "p3",         # Higher quality preset for final output
+            # "-rc:v", "vbr",
+            # "-cq:v", "23",
+            # "-b:v", "8M",           # Higher bitrate for final output
             # CPU encoding (commented out)
-            # "-c:v", "libx264",     # CPU encoder
-            # "-preset", "medium",    # CPU preset
-            # "-crf", "23",          # CPU quality level
+            "-c:v", "libx264",     # CPU encoder
+            "-preset", "medium",    # CPU preset
+            "-crf", "23",          # CPU quality level
             "-c:a", "aac",
             "-ar", "44100",
             "-ac", "2",
