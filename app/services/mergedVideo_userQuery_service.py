@@ -93,22 +93,29 @@ def mergedVideo_userQuery_service(
             if len(escaped_font) > 1 and escaped_font[1] == ':':
                 escaped_font = escaped_font[0] + '\\:' + escaped_font[2:]
 
-            # FFmpeg command to ensure consistent settings across all clips
+            # FFmpeg command with NVIDIA GPU acceleration
             cmd = [
                 ffmpeg_path, "-y",
                 "-ss", str(start),
                 "-t", str(duration),
                 "-i", matching_video,
                 "-vf", f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=12:fontcolor=white:x=w-tw-10:y=h-th-10",
-                "-c:v", "libx264",
-                "-preset", "ultrafast",
-                "-crf", "23",
-                "-c:a", "aac",  # Use AAC audio codec
-                "-ar", "44100",  # Set audio sample rate
-                "-ac", "2",      # Set stereo audio
-                "-b:a", "128k",  # Set audio bitrate
-                "-pix_fmt", "yuv420p",  # Set pixel format
-                "-r", "30",      # Set frame rate to 30fps
+                # GPU encoding (NVIDIA)
+                "-c:v", "h264_nvenc",  # Use NVIDIA encoder
+                "-preset", "p1",        # Fast preset for NVENC
+                "-rc:v", "vbr",        # Variable bitrate
+                "-cq:v", "23",         # Quality level (similar to CRF)
+                "-b:v", "5M",          # Maximum bitrate
+                # CPU encoding (commented out)
+                # "-c:v", "libx264",     # CPU encoder
+                # "-preset", "ultrafast", # CPU preset
+                # "-crf", "23",          # CPU quality level
+                "-c:a", "aac",
+                "-ar", "44100",
+                "-ac", "2",
+                "-b:a", "128k",
+                "-pix_fmt", "yuv420p",
+                "-r", "30",
                 output_path
             ]
 
@@ -126,16 +133,23 @@ def mergedVideo_userQuery_service(
                 f.write(f"file '{clip_path}'\n")
 
         output_final = "merged.mp4"
-        # Final concatenation with consistent settings
+        # Final concatenation with GPU acceleration
         concat_cmd = [
             ffmpeg_path, "-y",
             "-f", "concat",
             "-safe", "0",
             "-i", concat_list,
-            "-c:v", "libx264",  # Re-encode video
-            "-preset", "medium",  # Better quality for final output
-            "-crf", "23",
-            "-c:a", "aac",      # Re-encode audio
+            # GPU encoding (NVIDIA)
+            "-c:v", "h264_nvenc",    # Use NVIDIA encoder
+            "-preset", "p3",         # Higher quality preset for final output
+            "-rc:v", "vbr",
+            "-cq:v", "23",
+            "-b:v", "8M",           # Higher bitrate for final output
+            # CPU encoding (commented out)
+            # "-c:v", "libx264",     # CPU encoder
+            # "-preset", "medium",    # CPU preset
+            # "-crf", "23",          # CPU quality level
+            "-c:a", "aac",
             "-ar", "44100",
             "-ac", "2",
             "-b:a", "128k",
