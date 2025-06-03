@@ -18,7 +18,7 @@ class VideoSummerizerService:
         :param video_id: YouTube video identifier
         :return: Tuple of (transcript list, error message or None)
         """
-        for attempt in range(10):
+        for attempt in range(20):
             try:
                 transcript = YouTubeTranscriptApi.get_transcript(video_id)
                 return transcript, None

@@ -93,6 +93,7 @@ def mergedVideo_userQuery_service(
             if len(escaped_font) > 1 and escaped_font[1] == ':':
                 escaped_font = escaped_font[0] + '\\:' + escaped_font[2:]
 
+            # FFmpeg command to ensure consistent settings across all clips
             cmd = [
                 ffmpeg_path, "-y",
                 "-ss", str(start),
@@ -102,7 +103,12 @@ def mergedVideo_userQuery_service(
                 "-c:v", "libx264",
                 "-preset", "ultrafast",
                 "-crf", "23",
-                "-c:a", "copy",
+                "-c:a", "aac",  # Use AAC audio codec
+                "-ar", "44100",  # Set audio sample rate
+                "-ac", "2",      # Set stereo audio
+                "-b:a", "128k",  # Set audio bitrate
+                "-pix_fmt", "yuv420p",  # Set pixel format
+                "-r", "30",      # Set frame rate to 30fps
                 output_path
             ]
 
@@ -120,12 +126,19 @@ def mergedVideo_userQuery_service(
                 f.write(f"file '{clip_path}'\n")
 
         output_final = "merged.mp4"
+        # Final concatenation with consistent settings
         concat_cmd = [
             ffmpeg_path, "-y",
             "-f", "concat",
             "-safe", "0",
             "-i", concat_list,
-            "-c", "copy",
+            "-c:v", "libx264",  # Re-encode video
+            "-preset", "medium",  # Better quality for final output
+            "-crf", "23",
+            "-c:a", "aac",      # Re-encode audio
+            "-ar", "44100",
+            "-ac", "2",
+            "-b:a", "128k",
             output_final
         ]
         try:
