@@ -23,7 +23,7 @@ class VideoSummerizerService:
                 transcript = YouTubeTranscriptApi.get_transcript(video_id)
                 return transcript, None
             except Exception as e:
-                if attempt == 3:
+                if attempt == 20:
                     return None, str(e)
                 time.sleep(1)
 
