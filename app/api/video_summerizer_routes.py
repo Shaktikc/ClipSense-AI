@@ -28,10 +28,19 @@ def get_youtube_videos_summary(
     results = []
     errors = []
     all_transcripts = []
+    print("video_ids", video_ids)
 
     # Collect all transcripts
     for video_id in video_ids:
-        transcript, error = video_summary_service.get_transcript(video_id)
+        result = video_summary_service.get_transcript(video_id)
+        print("result", result)
+        if result is None:  # Handle case when get_transcript returns None
+            raise HTTPException(
+                status_code=400,
+                detail=f"Failed to get transcript for video ID: {video_id}"
+            )
+            
+        transcript = result
         if transcript:
             transcript_string = json.dumps(
                 {"video_id": video_id, "transcript": transcript}
@@ -43,7 +52,10 @@ def get_youtube_videos_summary(
                 )
             )
         else:
-            errors.append(ErrorResult(video_id=video_id, error=error, status="error"))
+            raise HTTPException(
+                status_code=400,
+                detail=f"Error getting transcript for video ID {video_id}: {result.error}"
+            )
 
     # print(all_transcripts)
 
@@ -57,7 +69,7 @@ def get_youtube_videos_summary(
         )
         if transcript_json:
             user_query_match_transcript = video_summary_service.transcript_related_to_user_query(
-                "why i should not  buy samsung S25 Edge?", [json.dumps(transcript_json)]
+                "Should I  buy samsung S25 Edge?", [json.dumps(transcript_json)]
             )
             cleaned_transcript = re.sub(
                 r"[`\u2018\u2019\u201c\u201d]", "", user_query_match_transcript

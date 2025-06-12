@@ -1,29 +1,46 @@
 from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.proxies import GenericProxyConfig
 from typing import List, Tuple, Dict
 import time
 from openai import OpenAI
 from app.config.settings import API_KEY
+from youtube_transcript_api.proxies import WebshareProxyConfig
+
+
 
 
 class VideoSummerizerService:
     def __init__(self):
         self.client = OpenAI(api_key=API_KEY)
+        # self.ytt_api = YouTubeTranscriptApi(
+        #     proxy_config=GenericProxyConfig(
+        #         http_url="socks5h://USERNAME:PASSWORD@us.socks.nordhold.net:1080",
+        #         https_url="socks5h://USERNAME:PASSWORD@us.socks.nordhold.net:1080"
+        #     )
+        # )
+        self.ytt_api = YouTubeTranscriptApi(
+            proxy_config=WebshareProxyConfig(
+            proxy_username="vuuspimn",
+            proxy_password="yb7utxrwqg1x",
+            )
+        )
+
 
     def get_transcript(self, video_id: str) -> Tuple[List[Dict], str]:
-        
         """
         Retrieve the transcript for a given YouTube video.
-        Retries up to 10 times in case of transient failures.
+        Retries up to 20 times in case of transient failures.
 
         :param video_id: YouTube video identifier
         :return: Tuple of (transcript list, error message or None)
         """
         for attempt in range(20):
             try:
-                transcript = YouTubeTranscriptApi.get_transcript(video_id)
-                return transcript, None
+                transcript = self.ytt_api.get_transcript(video_id)
+                print(f"Transcript for video {video_id} retrieved successfully.",transcript)
+                return transcript
             except Exception as e:
-                if attempt == 20:
+                if attempt == 19:
                     return None, str(e)
                 time.sleep(1)
 
