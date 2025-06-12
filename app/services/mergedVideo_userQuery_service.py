@@ -8,30 +8,6 @@ import sys
 import re
 
 
-def deduplicate_segments(segments: List[dict]) -> List[dict]:
-    """Remove duplicate and overlapping segments"""
-    if not segments:
-        return []
-    
-    # Sort segments by video_id and start time
-    sorted_segments = sorted(segments, key=lambda x: (x['video_id'], x['start']))
-    deduplicated = []
-    
-    for segment in sorted_segments:
-        # Skip if this segment overlaps with the previous one
-        if deduplicated and segment['video_id'] == deduplicated[-1]['video_id']:
-            prev_end = deduplicated[-1]['start'] + deduplicated[-1]['duration']
-            curr_start = segment['start']
-            
-            # If there's overlap, skip this segment
-            if curr_start < prev_end:
-                continue
-        
-        deduplicated.append(segment)
-    
-    return deduplicated
-
-
 def get_ffmpeg_path():
     """Get the FFmpeg executable path"""
     if getattr(sys, 'frozen', False):
@@ -98,107 +74,85 @@ def mergedVideo_userQuery_service(
 
     print("Channel names extracted:", channel_names)
 
-    # Collect all segments first and deduplicate them
-    all_segments = []
     for match_obj in user_query_match:
         transcript_segments = match_obj.get("transcript", [])
-        all_segments.extend(transcript_segments)
-    
-    # Deduplicate segments before processing
-    deduplicated_segments = deduplicate_segments(all_segments)
-    print(f"Found {len(all_segments)} segments, reduced to {len(deduplicated_segments)} after deduplication")
+        for segment in transcript_segments:
+            video_id = segment["video_id"]
+            start = segment["start"]
+            duration = segment["duration"]
 
-    for segment in deduplicated_segments:
-        video_id = segment["video_id"]
-        start = segment["start"]
-        duration = segment["duration"]
+            matching_video = next((path for path in saved_video_paths if video_id in path), None)
+            if not matching_video:
+                continue
 
-        matching_video = next((path for path in saved_video_paths if video_id in path), None)
-        if not matching_video:
-            continue
+            output_path = os.path.join(temp_dir, f"{uuid.uuid4()}.mp4")
+            raw_channel = channel_names.get(video_id, "Unknown Source")
+            channel_text = escape_ffmpeg_text(f"Source: {raw_channel}")
+            escaped_font = arial_font.replace("\\", "/")
+            # Escape drive letter for FFmpeg (C:/... -> C\:/...)
+            if len(escaped_font) > 1 and escaped_font[1] == ':':
+                escaped_font = escaped_font[0] + '\\:' + escaped_font[2:]
 
-        output_path = os.path.join(temp_dir, f"{uuid.uuid4()}.mp4")
-        raw_channel = channel_names.get(video_id, "Unknown Source")
-        channel_text = escape_ffmpeg_text(f"Source: {raw_channel}")
-        escaped_font = arial_font.replace("\\", "/")
-        # Escape drive letter for FFmpeg (C:/... -> C\:/...)
-        if len(escaped_font) > 1 and escaped_font[1] == ':':
-            escaped_font = escaped_font[0] + '\\:' + escaped_font[2:]
+            # FFmpeg command with NVIDIA GPU acceleration
+            cmd = [
+                ffmpeg_path, "-y",
+                "-ss", str(start),
+                "-t", str(duration),
+                "-i", matching_video,
+                "-vf", f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=24:fontcolor=white:x=w-tw-10:y=h-th-10",
+                # GPU encoding (NVIDIA)
+                "-c:v", "h264_nvenc",  # Use NVIDIA encoder
+                "-preset", "p2",        # Fast preset for NVENC
+                "-rc:v", "vbr",        # Variable bitrate
+                "-cq:v", "23",         # Quality level (similar to CRF)
+                "-b:v", "5M",          # Maximum bitrate
+                # CPU encoding (commented out)
+                # "-c:v", "libx264",     # CPU encoder
+                # "-preset", "ultrafast", # CPU preset
+                # "-crf", "23",          # CPU quality level
+                "-c:a", "aac",
+                "-ar", "44100",
+                "-ac", "2",
+                "-b:a", "128k",
+                "-pix_fmt", "yuv420p",
+                "-r", "30",
+                output_path
+            ]
 
-        # FFmpeg command with improved segment handling
-        cmd = [
-            ffmpeg_path, "-y",
-            "-ss", str(start),
-            "-t", str(duration),
-            "-i", matching_video,            "-vf", f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=24:fontcolor=white:x=w-tw-10:y=h-th-10",
-            # CPU encoding settings
-            "-c:v", "libx264",     # CPU encoder
-            "-preset", "medium",    # Balanced preset for CPU
-            "-crf", "23",          # Quality level
-            "-b:v", "5M",          # Maximum bitrate
-            "-force_key_frames", f"expr:gte(t,n_forced*{duration})", # Force keyframe at start
-            "-g", "30",             # Keyframe interval
-            "-keyint_min", "30",    # Minimum keyframe interval
-            "-strict", "experimental",
-            "-c:a", "aac",
-            "-ar", "44100",
-            "-ac", "2",
-            "-b:a", "192k",         # Increased audio bitrate
-            "-pix_fmt", "yuv420p",
-            "-r", "30",
-            "-vsync", "1",          # Ensure frame timing consistency
-            "-async", "1",          # Audio sync
-            output_path
-        ]
-
-        try:
-            subprocess.run(cmd, check=True)
-            clips_paths.append(output_path)
-        except subprocess.CalledProcessError as e:
-            print(f"Error processing clip from {matching_video}: {e}")
-            print("Command used:", " ".join(cmd))
+            try:
+                subprocess.run(cmd, check=True)
+                clips_paths.append(output_path)
+            except subprocess.CalledProcessError as e:
+                print(f"Error processing clip from {matching_video}: {e}")
+                print("Command used:", " ".join(cmd))
 
     if clips_paths:
-        # Create a temporary filter file for complex concatenation
-        filter_file = os.path.join(temp_dir, "filter.txt")
-        with open(filter_file, "w") as f:
-            for i, clip_path in enumerate(clips_paths):
-                f.write(f"[{i}:v]setpts=PTS-STARTPTS[v{i}];\n")
-                f.write(f"[{i}:a]asetpts=PTS-STARTPTS[a{i}];\n")
-            
-            # Write the concat line
-            v_inputs = "".join(f"[v{i}]" for i in range(len(clips_paths)))
-            a_inputs = "".join(f"[a{i}]" for i in range(len(clips_paths)))
-            f.write(f"{v_inputs}concat=n={len(clips_paths)}:v=1:a=0[vout];\n")
-            f.write(f"{a_inputs}concat=n={len(clips_paths)}:v=0:a=1[aout]")
-
-        # Build input arguments for each clip
-        input_args = []
-        for clip_path in clips_paths:
-            input_args.extend(["-i", clip_path])
+        concat_list = os.path.join(temp_dir, "inputs.txt")
+        with open(concat_list, "w") as f:
+            for clip_path in clips_paths:
+                f.write(f"file '{clip_path}'\n")
 
         output_final = "merged.mp4"
-        # Final concatenation with complex filter
+        # Final concatenation with GPU acceleration
         concat_cmd = [
             ffmpeg_path, "-y",
-            *input_args,
-            "-filter_complex_script", filter_file,
-            "-map", "[vout]",
-            "-map", "[aout]",
-            # Use CPU encoding for final output for better stability
+            "-f", "concat",
+            "-safe", "0",
+            "-i", concat_list,
+            # GPU encoding (NVIDIA)
+            # "-c:v", "h264_nvenc",    # Use NVIDIA encoder
+            # "-preset", "p3",         # Higher quality preset for final output
+            # "-rc:v", "vbr",
+            # "-cq:v", "23",
+            # "-b:v", "8M",           # Higher bitrate for final output
+            # CPU encoding (commented out)
             "-c:v", "libx264",     # CPU encoder
-            "-preset", "medium",    # Balanced preset
-            "-crf", "23",          # Quality level
-            "-g", "30",            # Keyframe interval
-            "-keyint_min", "30",   # Minimum keyframe interval
-            "-bf", "2",            # Maximum 2 B-frames
+            "-preset", "medium",    # CPU preset
+            "-crf", "23",          # CPU quality level
             "-c:a", "aac",
             "-ar", "44100",
             "-ac", "2",
-            "-b:a", "192k",        # Consistent audio bitrate
-            "-movflags", "+faststart",  # Enable fast start for web playback
-            "-vsync", "1",         # Ensure frame timing consistency
-            "-async", "1",         # Audio sync
+            "-b:a", "128k",
             output_final
         ]
         try:
