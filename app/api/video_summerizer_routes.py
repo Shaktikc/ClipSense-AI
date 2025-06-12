@@ -74,7 +74,10 @@ def get_youtube_videos_summary(
             cleaned_transcript = re.sub(
                 r"[`\u2018\u2019\u201c\u201d]", "", user_query_match_transcript
             )
+            # Decode and sort the transcript
             user_query_match_transcript_obj = demjson3.decode(cleaned_transcript)
+            if isinstance(user_query_match_transcript_obj, list):
+                user_query_match_transcript_obj.sort(key=lambda x: x.get('start', 0))
             user_query_match_transcript_objs.append(user_query_match_transcript_obj)
         else:
             user_query_match_transcript_objs.append({"video_id": video_id, "error": "Transcript not found"})
