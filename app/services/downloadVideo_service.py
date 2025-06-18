@@ -1,6 +1,39 @@
 import yt_dlp
 import os
 from pathlib import Path
+from urllib.parse import urlparse, parse_qs
+
+def extract_video_id(url: str) -> str:
+    """
+    Extract video ID from YouTube URL
+    
+    Args:
+        url (str): YouTube URL
+        
+    Returns:
+        str: Video ID
+        
+    Raises:
+        ValueError: If video ID cannot be extracted
+    """
+    # Try parsing URL query parameters
+    parsed_url = urlparse(url)
+    
+    # Check if it's a standard youtube.com URL
+    if 'youtube.com' in parsed_url.netloc:
+        query_params = parse_qs(parsed_url.query)
+        if 'v' in query_params:
+            return query_params['v'][0]
+            
+    # Check if it's a youtu.be URL
+    elif 'youtu.be' in parsed_url.netloc:
+        return parsed_url.path.lstrip('/')
+        
+    raise ValueError("Could not extract video ID from URL")
+
+def get_default_download_path() -> str:
+    """Get the default Windows Downloads folder path"""
+    return os.path.join(os.path.expanduser("~"), "Downloads")
 
 def download_youtube_video(url: str, output_path: str = None) -> str:
     """
@@ -9,7 +42,7 @@ def download_youtube_video(url: str, output_path: str = None) -> str:
     Args:
         url (str): The URL of the YouTube video
         output_path (str, optional): The path where the video should be saved. 
-                                   If not provided, saves in the current directory.
+                                   If not provided, saves in the Windows Downloads folder.
     
     Returns:
         str: Path to the downloaded video file
@@ -18,28 +51,31 @@ def download_youtube_video(url: str, output_path: str = None) -> str:
         Exception: If download fails
     """
     try:
-        if output_path:
-            # Create the output directory if it doesn't exist
-            Path(output_path).mkdir(parents=True, exist_ok=True)
-          # Configure yt-dlp options
+        # Set default path to Windows Downloads folder if not provided
+        if output_path is None:
+            output_path = get_default_download_path()
+            
+        # Create the output directory if it doesn't exist
+        Path(output_path).mkdir(parents=True, exist_ok=True)
+        
+        # Extract video ID for filename
+        video_id = extract_video_id(url)
+        
+        # Configure yt-dlp options
         ydl_opts = {
-            'format': 'bestvideo[height=1080][ext=mp4]+bestaudio[ext=m4a]/best[height=1080]/best',  # Prioritize 1080p MP4
-            'outtmpl': os.path.join(output_path, '%(title)s.%(ext)s') if output_path else '%(title)s.%(ext)s',
+            'format': 'bestvideo[height=1080][ext=mp4]+bestaudio[ext=m4a]/best[height=1080]/best',
+            'outtmpl': os.path.join(output_path, f'{video_id}.%(ext)s'),
             'quiet': True,
             'no_warnings': True,
             'extract_audio': False,
-            'merge_output_format': 'mp4'  # Ensure final output is MP4
+            'merge_output_format': 'mp4'
         }
         
         # Create yt-dlp object with the options
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             # Download the video and get info
             info = ydl.extract_info(url, download=True)
-            video_title = info['title']
-            video_ext = info['ext']
-            
-            # Construct the full path of downloaded file
-            video_path = os.path.join(output_path, f"{video_title}.{video_ext}") if output_path else f"{video_title}.{video_ext}"
+            video_path = os.path.join(output_path, f"{video_id}.mp4")
             
             return video_path
             
