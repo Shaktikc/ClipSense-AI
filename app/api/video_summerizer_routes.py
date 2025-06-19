@@ -1,113 +1,170 @@
-from fastapi import APIRouter, HTTPException, APIRouter, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
-from app.models.schemas import (
-    VideoRequest,
-    VideoSummaryResponse,
-    TranscriptResult,
-    ErrorResult,
-)
-from app.services.video_summerizer_service import VideoSummerizerService
-from app.services.mergedVideo_userQuery_service import mergedVideo_userQuery_service
+from pydantic import BaseModel
+from typing import List, Optional
 import json
 import demjson3
 import re
-from typing import List
-import tempfile
-import shutil
 import os
+import asyncio
+
+from app.models.schemas import VideoSummaryResponse, TranscriptResult
+from app.services.video_summerizer_service import VideoSummerizerService
+from app.services.mergedVideo_userQuery_service import mergedVideo_userQuery_service
+from app.services.downloadVideo_service import download_youtube_video, extract_video_id
 
 router = APIRouter()
 video_summary_service = VideoSummerizerService()
 
 
-@router.post("/summaries/youtube/", response_model=VideoSummaryResponse)
-def get_youtube_videos_summary(
-    video_ids: List[str] = Form(...),
-    video_files: List[UploadFile] = File(...),  # Changed to List[UploadFile]
-):
-    results = []
-    errors = []
-    all_transcripts = []
-    print("video_ids", video_ids)
+class YouTubeVideoRequest(BaseModel):
+    urls: List[str]
+    user_query: str
 
-    # Collect all transcripts
-    for video_id in video_ids:
-        result = video_summary_service.get_transcript(video_id)
-        print("result", result)
-        if result is None:  # Handle case when get_transcript returns None
-            raise HTTPException(
-                status_code=400,
-                detail=f"Failed to get transcript for video ID: {video_id}"
+
+async def process_video(url: str, output_path: str):
+    """
+    Process a single video: download and get video ID
+    """
+    try:
+        video_id = extract_video_id(url)
+        video_path = download_youtube_video(url=url, output_path=output_path)
+        return {
+            "url": url,
+            "video_id": video_id,
+            "status": "success",
+            "video_path": video_path,
+        }
+    except Exception as e:
+        return {
+            "url": url,
+            "video_id": None,
+            "status": "failed",
+            "error": str(e),
+            "video_path": None,
+        }
+
+
+@router.post("/summaries/youtube/")
+async def get_youtube_videos_summary(request: YouTubeVideoRequest):
+    """
+    Download YouTube videos and generate summaries based on user query
+    """
+    try:
+        # Create temporary directory for downloaded videos
+        temp_dir = os.path.join(os.getcwd(), "temp")
+        os.makedirs(temp_dir, exist_ok=True)
+
+        # Download all videos concurrently
+        download_tasks = [
+            process_video(url, temp_dir) for url in request.urls
+        ]
+        download_results = await asyncio.gather(*download_tasks)
+
+        # Filter successful downloads
+        successful_downloads = [
+            result for result in download_results 
+            if result["status"] == "success"
+        ]
+
+        # Collect errors from failed downloads
+        errors = [
+            {"video_url": result["url"], "error": result["error"]}
+            for result in download_results
+            if result["status"] == "failed"
+        ]
+
+        if not successful_downloads:
+            return JSONResponse(
+                content=VideoSummaryResponse(
+                    results=[],
+                    errors=errors,
+                    transcript_related_to_user_query=[]
+                ).model_dump(),
+                status_code=500
+            )
+
+        results = []
+        all_transcripts = []
+
+        # Process transcripts for successfully downloaded videos
+        for download in successful_downloads:
+            video_id = download["video_id"]
+            transcript = video_summary_service.get_transcript(video_id)
+
+            if transcript:
+                transcript_string = json.dumps({
+                    "video_id": video_id,
+                    "transcript": transcript
+                })
+                all_transcripts.append(transcript_string)
+                results.append(TranscriptResult(
+                    video_id=video_id,
+                    transcript=transcript,
+                    status="success"
+                ))
+            else:
+                errors.append({
+                    "video_url": download["url"],
+                    "error": f"Failed to get transcript for video ID: {video_id}"
+                })
+
+        # Process user query for each video
+        user_query_match_transcript_objs = []
+        for download in successful_downloads:
+            video_id = download["video_id"]
+            transcript_json = next(
+                (json.loads(t) for t in all_transcripts if json.loads(t)["video_id"] == video_id),
+                None
             )
             
-        transcript = result
-        if transcript:
-            transcript_string = json.dumps(
-                {"video_id": video_id, "transcript": transcript}
-            )
-            all_transcripts.append(transcript_string)
-            results.append(
-                TranscriptResult(
-                    video_id=video_id, transcript=transcript, status="success"
+            if transcript_json:
+                user_query_match_transcript = video_summary_service.transcript_related_to_user_query(
+                    request.user_query, [json.dumps(transcript_json)]
                 )
+                cleaned_transcript = re.sub(
+                    r"[`\u2018\u2019\u201c\u201d]", "", user_query_match_transcript
+                )
+                user_query_match_transcript_obj = demjson3.decode(cleaned_transcript)
+                if isinstance(user_query_match_transcript_obj, list):
+                    user_query_match_transcript_obj.sort(key=lambda x: x.get('start', 0))
+                user_query_match_transcript_objs.append(user_query_match_transcript_obj)
+
+        # Process video merging if needed
+        video_paths = [download["video_path"] for download in successful_downloads]
+        video_ids = [download["video_id"] for download in successful_downloads]
+        if video_paths:
+            _ = mergedVideo_userQuery_service(
+                video_paths,
+                user_query_match_transcript_objs,
+                video_ids
             )
-        else:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Error getting transcript for video ID {video_id}: {result.error}"
-            )
 
-    # print(all_transcripts)
-
-    # For each video_id, run transcript_related_to_user_query separately
-    user_query_match_transcript_objs = []
-    for video_id in video_ids:
-        # Find the transcript for this video_id
-        transcript_json = next(
-            (json.loads(t) for t in all_transcripts if json.loads(t)["video_id"] == video_id),
-            None,
-        )
-        if transcript_json:
-            user_query_match_transcript = video_summary_service.transcript_related_to_user_query(
-                "Should I  buy samsung S25 Edge?", [json.dumps(transcript_json)]
-            )
-            cleaned_transcript = re.sub(
-                r"[`\u2018\u2019\u201c\u201d]", "", user_query_match_transcript
-            )
-            # Decode and sort the transcript
-            user_query_match_transcript_obj = demjson3.decode(cleaned_transcript)
-            if isinstance(user_query_match_transcript_obj, list):
-                user_query_match_transcript_obj.sort(key=lambda x: x.get('start', 0))
-            user_query_match_transcript_objs.append(user_query_match_transcript_obj)
-        else:
-            user_query_match_transcript_objs.append({"video_id": video_id, "error": "Transcript not found"})
-    print("user_query_match_transcript_objs", user_query_match_transcript_objs)
-    saved_video_paths = []
-
-    if all_transcripts:
-        # Process each uploaded video file
-        for video_file in video_files:
-            original_filename = video_file.filename
-            temp_dir = os.path.join(os.getcwd(), "temp")
-            os.makedirs(temp_dir, exist_ok=True)
-            tmp_path = os.path.join(temp_dir, original_filename)
-
-            with open(tmp_path, "wb") as tmp:
-                shutil.copyfileobj(video_file.file, tmp)
-            saved_video_paths.append(tmp_path)
-
-        # Pass all video paths at once
-        mergedVideo_userQuery_service(
-            saved_video_paths,  # Now passing list of paths
-            user_query_match_transcript_objs,
-            video_ids,
+        return JSONResponse(
+            content=VideoSummaryResponse(
+                results=results,
+                errors=errors,
+                transcript_related_to_user_query=user_query_match_transcript_objs
+            ).model_dump(),
+            status_code=200 if results else 500
         )
 
-    return JSONResponse(
-        content=VideoSummaryResponse(
-            results=results,
-            errors=errors,
-            transcript_related_to_user_query=user_query_match_transcript_objs,
-        ).model_dump(),
-        status_code=200 if results else 500,
-    )
+    except Exception as e:
+        return JSONResponse(
+            content=VideoSummaryResponse(
+                results=[],
+                errors=[{"error": str(e)}],
+                transcript_related_to_user_query=[]
+            ).model_dump(),
+            status_code=500
+        )
+    finally:
+        # Clean up downloaded videos
+        try:
+            for download in download_results:
+                if download["video_path"] and os.path.exists(download["video_path"]):
+                    os.remove(download["video_path"])
+            if os.path.exists(temp_dir):
+                os.rmdir(temp_dir)
+        except Exception as e:
+            print(f"Error cleaning up files: {str(e)}")
