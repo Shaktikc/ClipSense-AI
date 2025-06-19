@@ -31,7 +31,7 @@ env/
 venv/
 .venv/
 .merged.mp4
-merged
+merged.mp4
 pip-wheel-metadata/
 *.log
 
