@@ -99,7 +99,7 @@ def mergedVideo_userQuery_service(
                 "-ss", str(start),
                 "-t", str(duration),
                 "-i", matching_video,
-                "-vf", f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=24:fontcolor=white:x=w-tw-10:y=h-th-10",
+                "-vf", f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=34:fontcolor=white:x=w-tw-10:y=h-th-10",
                 # GPU encoding (NVIDIA)
                 "-c:v", "h264_nvenc",  # Use NVIDIA encoder
                 "-preset", "p2",        # Fast preset for NVENC
