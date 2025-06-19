@@ -6,7 +6,7 @@ import os
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
-from ..services.downloadVideo_service import download_youtube_video
+from ..services.downloadVideo_service import download_youtube_video, extract_video_id
 
 # Create router instance
 router = APIRouter()
@@ -47,12 +47,19 @@ async def batch_download_videos(request: BatchVideoDownloadRequest):
         # Count successful and failed downloads
         successful = sum(1 for result in results if result["status"] == "success")
         failed = len(results) - successful
+          # Extract successful video IDs
+        successful_video_ids = [
+            result["video_id"] 
+            for result in results 
+            if result["status"] == "success" and result["video_id"] is not None
+        ]
         
         return JSONResponse(
             content={
                 "status": "completed",
                 "message": f"Completed batch download: {successful} successful, {failed} failed",
-                "results": results
+                "video_ids": successful_video_ids,  # List of successfully downloaded video IDs
+                "results": results  # Detailed results including video IDs for each attempt
             },
             status_code=200
         )
@@ -71,16 +78,24 @@ async def download_single_video(url: str, output_path: str) -> Dict:
     Helper function to download a single video and return its status
     """
     try:
+        video_id = extract_video_id(url)
         video_path = download_youtube_video(url=url, output_path=output_path)
         return {
             "url": url,
+            "video_id": video_id,
             "status": "success",
             "video_path": video_path,
             "error": None
         }
     except Exception as e:
+        video_id = None
+        try:
+            video_id = extract_video_id(url)
+        except:
+            pass
         return {
             "url": url,
+            "video_id": video_id,
             "status": "failed",
             "video_path": None,
             "error": str(e)
