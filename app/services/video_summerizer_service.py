@@ -74,6 +74,7 @@ class VideoSummerizerService:
 
                ## 2.Analyze the transcript for relevant information based on a user's query.
                 - Search for segments that semantically relate to the user query.
+                - Each match segment duration should be less than 60 seconds.If  a match segment duration is longer than 60 seconds, split it into smaller segments.
 
                ## 3. Format the final response.
                 Return the result in strict JSON format as follows:

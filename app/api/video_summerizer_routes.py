@@ -8,7 +8,7 @@ import re
 import os
 import asyncio
 
-from app.models.schemas import VideoSummaryResponse, TranscriptResult
+from app.models.schemas import VideoSummaryResponse, TranscriptResult, ErrorResult
 from app.services.video_summerizer_service import VideoSummerizerService
 from app.services.mergedVideo_userQuery_service import mergedVideo_userQuery_service
 from app.services.downloadVideo_service import download_youtube_video, extract_video_id
@@ -36,9 +36,13 @@ async def process_video(url: str, output_path: str):
             "video_path": video_path,
         }
     except Exception as e:
+        try:
+            video_id = extract_video_id(url)
+        except:
+            video_id = "unknown"
         return {
             "url": url,
-            "video_id": None,
+            "video_id": video_id,
             "status": "failed",
             "error": str(e),
             "video_path": None,
@@ -50,6 +54,9 @@ async def get_youtube_videos_summary(request: YouTubeVideoRequest):
     """
     Download YouTube videos and generate summaries based on user query
     """
+    download_results = []
+    temp_dir = None
+    
     try:
         # Create temporary directory for downloaded videos
         temp_dir = os.path.join(os.getcwd(), "temp")
@@ -69,7 +76,11 @@ async def get_youtube_videos_summary(request: YouTubeVideoRequest):
 
         # Collect errors from failed downloads
         errors = [
-            {"video_url": result["url"], "error": result["error"]}
+            ErrorResult(
+                video_id=result["video_id"],
+                error=result["error"],
+                status="failed"
+            )
             for result in download_results
             if result["status"] == "failed"
         ]
@@ -104,10 +115,11 @@ async def get_youtube_videos_summary(request: YouTubeVideoRequest):
                     status="success"
                 ))
             else:
-                errors.append({
-                    "video_url": download["url"],
-                    "error": f"Failed to get transcript for video ID: {video_id}"
-                })
+                errors.append(ErrorResult(
+                    video_id=video_id,
+                    error=f"Failed to get transcript for video ID: {video_id}",
+                    status="failed"
+                ))
 
         # Process user query for each video
         user_query_match_transcript_objs = []
@@ -153,18 +165,24 @@ async def get_youtube_videos_summary(request: YouTubeVideoRequest):
         return JSONResponse(
             content=VideoSummaryResponse(
                 results=[],
-                errors=[{"error": str(e)}],
+                errors=[ErrorResult(
+                    video_id="unknown",
+                    error=str(e),
+                    status="failed"
+                )],
                 transcript_related_to_user_query=[]
             ).model_dump(),
             status_code=500
         )
+        
     finally:
         # Clean up downloaded videos
         try:
-            for download in download_results:
-                if download["video_path"] and os.path.exists(download["video_path"]):
-                    os.remove(download["video_path"])
-            if os.path.exists(temp_dir):
+            if download_results:
+                for download in download_results:
+                    if download["video_path"] and os.path.exists(download["video_path"]):
+                        os.remove(download["video_path"])
+            if temp_dir and os.path.exists(temp_dir):
                 os.rmdir(temp_dir)
         except Exception as e:
             print(f"Error cleaning up files: {str(e)}")

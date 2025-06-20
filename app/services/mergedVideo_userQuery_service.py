@@ -75,7 +75,7 @@ def mergedVideo_userQuery_service(
     print("Channel names extracted:", channel_names)
 
     for match_obj in user_query_match:
-        transcript_segments = match_obj.get("transcript", [])[:3]  # Will take up to 3 segments
+        transcript_segments = match_obj.get("transcript", [])[:15]  # Will take up to 3 segments
         for segment in transcript_segments:
             video_id = segment["video_id"]
             start = segment["start"]
@@ -101,15 +101,15 @@ def mergedVideo_userQuery_service(
                 "-i", matching_video,
                 "-vf", f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=34:fontcolor=white:x=w-tw-10:y=h-th-10",
                 # GPU encoding (NVIDIA)
-                "-c:v", "h264_nvenc",  # Use NVIDIA encoder
-                "-preset", "p2",        # Fast preset for NVENC
-                "-rc:v", "vbr",        # Variable bitrate
-                "-cq:v", "23",         # Quality level (similar to CRF)
-                "-b:v", "5M",          # Maximum bitrate
+                # "-c:v", "h264_nvenc",  # Use NVIDIA encoder
+                # "-preset", "p2",        # Fast preset for NVENC
+                # "-rc:v", "vbr",        # Variable bitrate
+                # "-cq:v", "23",         # Quality level (similar to CRF)
+                # "-b:v", "5M",          # Maximum bitrate
                 # CPU encoding (commented out)
-                # "-c:v", "libx264",     # CPU encoder
-                # "-preset", "ultrafast", # CPU preset
-                # "-crf", "23",          # CPU quality level
+                "-c:v", "libx264",     # CPU encoder
+                "-preset", "medium", # CPU preset
+                "-crf", "23",          # CPU quality level
                 "-c:a", "aac",
                 "-ar", "44100",
                 "-ac", "2",
