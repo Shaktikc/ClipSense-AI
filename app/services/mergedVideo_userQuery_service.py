@@ -75,7 +75,7 @@ def mergedVideo_userQuery_service(
     print("Channel names extracted:", channel_names)
 
     for match_obj in user_query_match:
-        transcript_segments = match_obj.get("transcript", [])[:4]  # Will take up to 3 segments
+        transcript_segments = match_obj.get("transcript", [])[:3]  # Will take up to 3 segments
         for segment in transcript_segments:
             video_id = segment["video_id"]
             start = segment["start"]
@@ -93,29 +93,24 @@ def mergedVideo_userQuery_service(
             if len(escaped_font) > 1 and escaped_font[1] == ':':
                 escaped_font = escaped_font[0] + '\\:' + escaped_font[2:]
 
-            # FFmpeg command with NVIDIA GPU acceleration
+            # FFmpeg command with CPU acceleration
             cmd = [
                 ffmpeg_path, "-y",
                 "-ss", str(start),
                 "-t", str(duration),
                 "-i", matching_video,
-                "-vf", f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=34:fontcolor=white:x=w-tw-10:y=h-th-10",
-                # GPU encoding (NVIDIA)
-                # "-c:v", "h264_nvenc",  # Use NVIDIA encoder
-                # "-preset", "p2",        # Fast preset for NVENC
-                # "-rc:v", "vbr",        # Variable bitrate
-                # "-cq:v", "23",         # Quality level (similar to CRF)
-                # "-b:v", "5M",          # Maximum bitrate
-                # CPU encoding (commented out)
-                "-c:v", "libx264",     # CPU encoder
-                "-preset", "medium", # CPU preset
-                "-crf", "23",          # CPU quality level
+                "-vf", f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=34:fontcolor=white:x=w-tw-10:y=h-th-10",                "-c:v", "libx264",     # CPU encoder
+                "-preset", "medium",    # Higher quality preset
+                "-crf", "23",        # Lower CRF for higher quality (range 0-51, lower is better)
                 "-c:a", "aac",
-                "-ar", "44100",
+                "-ar", "44100",      # Higher audio sample rate
                 "-ac", "2",
-                "-b:a", "128k",
+                "-b:a", "128k",      # Higher audio bitrate
                 "-pix_fmt", "yuv420p",
                 "-r", "30",
+                "-profile:v", "high",  # High profile for better quality
+                "-level", "4.2",      # Compatibility level
+                "-movflags", "+faststart",  # Web playback optimization
                 output_path
             ]
 
@@ -138,21 +133,17 @@ def mergedVideo_userQuery_service(
             ffmpeg_path, "-y",
             "-f", "concat",
             "-safe", "0",
-            "-i", concat_list,
-            # GPU encoding (NVIDIA)
-            # "-c:v", "h264_nvenc",    # Use NVIDIA encoder
-            # "-preset", "p3",         # Higher quality preset for final output
-            # "-rc:v", "vbr",
-            # "-cq:v", "23",
-            # "-b:v", "8M",           # Higher bitrate for final output
-            # CPU encoding (commented out)
+            "-i", concat_list,           
             "-c:v", "libx264",     # CPU encoder
-            "-preset", "medium",    # CPU preset
-            "-crf", "23",          # CPU quality level
+            "-preset", "medium",    # Higher quality preset
+            "-crf", "18",        # Lower CRF for higher quality
             "-c:a", "aac",
-            "-ar", "44100",
+            "-ar", "44100",      # Higher audio sample rate
             "-ac", "2",
-            "-b:a", "128k",
+            "-b:a", "128k",      # Higher audio bitrate
+            "-profile:v", "high", # High profile for better quality
+            "-level", "4.2",     # Compatibility level
+            "-movflags", "+faststart",  # Web playback optimization
             output_final
         ]
         try:
