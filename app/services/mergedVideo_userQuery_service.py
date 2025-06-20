@@ -75,7 +75,7 @@ def mergedVideo_userQuery_service(
     print("Channel names extracted:", channel_names)
 
     for match_obj in user_query_match:
-        transcript_segments = match_obj.get("transcript", [])[:15]  # Will take up to 3 segments
+        transcript_segments = match_obj.get("transcript", [])[:4]  # Will take up to 3 segments
         for segment in transcript_segments:
             video_id = segment["video_id"]
             start = segment["start"]
