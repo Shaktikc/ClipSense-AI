@@ -138,8 +138,8 @@ async def get_youtube_videos_summary(request: YouTubeVideoRequest):
                     r"[`\u2018\u2019\u201c\u201d]", "", user_query_match_transcript
                 )
                 user_query_match_transcript_obj = demjson3.decode(cleaned_transcript)
-                if isinstance(user_query_match_transcript_obj, list):
-                    user_query_match_transcript_obj.sort(key=lambda x: x.get('start', 0))
+                if isinstance(user_query_match_transcript_obj, dict) and "transcript" in user_query_match_transcript_obj:
+                  user_query_match_transcript_obj["transcript"].sort(key=lambda x: x.get("start", 0))
                 user_query_match_transcript_objs.append(user_query_match_transcript_obj)
 
         # Process video merging if needed
