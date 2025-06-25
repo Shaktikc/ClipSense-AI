@@ -93,13 +93,38 @@ def mergedVideo_userQuery_service(
             if len(escaped_font) > 1 and escaped_font[1] == ':':
                 escaped_font = escaped_font[0] + '\\:' + escaped_font[2:]
 
-            # FFmpeg command with CPU acceleration
+            # Get video resolution using ffprobe
+            probe_cmd = [
+                ffmpeg_path.replace('ffmpeg', 'ffprobe'),
+                '-v', 'error',
+                '-select_streams', 'v:0',
+                '-show_entries', 'stream=height',
+                '-of', 'default=noprint_wrappers=1:nokey=1',
+                matching_video
+            ]
+            try:
+                result = subprocess.run(probe_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+                video_height = int(result.stdout.strip())
+            except Exception as e:
+                print(f"Could not determine video resolution, defaulting to no scaling: {e}")
+                video_height = None
+
+            drawtext_filter = f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=34:fontcolor=white:x=w-tw-10:y=h-th-10"
+            if video_height == 720:
+                scale_filter = "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2"
+                vf_filter = f"{drawtext_filter},{scale_filter}"
+            elif video_height == 1080:
+                vf_filter = drawtext_filter  # No scaling for 1080p
+            else:
+                vf_filter = drawtext_filter  # No scaling for other resolutions
+
             cmd = [
                 ffmpeg_path, "-y",
                 "-ss", str(start),
                 "-t", str(duration),
                 "-i", matching_video,
-                "-vf", f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=34:fontcolor=white:x=w-tw-10:y=h-th-10",                "-c:v", "libx264",     # CPU encoder
+                "-vf", vf_filter,
+                "-c:v", "libx264",     # CPU encoder
                 "-preset", "medium",    # Higher quality preset
                 "-crf", "23",        # Lower CRF for higher quality (range 0-51, lower is better)
                 "-c:a", "aac",

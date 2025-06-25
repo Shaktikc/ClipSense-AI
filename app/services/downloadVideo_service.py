@@ -63,7 +63,7 @@ def download_youtube_video(url: str, output_path: str = None) -> str:
         
         # Configure yt-dlp options
         ydl_opts = {
-            'format': 'bestvideo[height=1080][ext=mp4]+bestaudio[ext=m4a]/best[height=1080]/best',
+            'format': 'bestvideo[height=1080][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height=720][ext=mp4]+bestaudio[ext=m4a]/best[height=1080]/best[height=720]/best',
             'outtmpl': os.path.join(output_path, f'{video_id}.%(ext)s'),
             'quiet': True,
             'no_warnings': True,
