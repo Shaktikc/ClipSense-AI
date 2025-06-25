@@ -111,12 +111,12 @@ def mergedVideo_userQuery_service(
 
             drawtext_filter = f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=34:fontcolor=white:x=w-tw-10:y=h-th-10"
             if video_height == 720:
-                scale_filter = "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2"
-                vf_filter = f"{drawtext_filter},{scale_filter}"
+                pad_filter = "pad=1920:1080:(ow-iw)/2:(oh-ih)/2"
+                vf_filter = f"{drawtext_filter},{pad_filter}"
             elif video_height == 1080:
-                vf_filter = drawtext_filter  # No scaling for 1080p
+                vf_filter = drawtext_filter  # No scaling or padding for 1080p
             else:
-                vf_filter = drawtext_filter  # No scaling for other resolutions
+                vf_filter = drawtext_filter  # No scaling or padding for other resolutions
 
             cmd = [
                 ffmpeg_path, "-y",

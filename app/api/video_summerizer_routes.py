@@ -62,9 +62,21 @@ async def get_youtube_videos_summary(request: YouTubeVideoRequest):
         temp_dir = os.path.join(os.getcwd(), "temp")
         os.makedirs(temp_dir, exist_ok=True)
 
-        # Download all videos concurrently
+        # Extract video_ids and filter duplicates before downloading
+        seen_video_ids = set()
+        unique_urls = []
+        for url in request.urls:
+            try:
+                video_id = extract_video_id(url)
+            except Exception:
+                video_id = None
+            if video_id and video_id not in seen_video_ids:
+                unique_urls.append(url)
+                seen_video_ids.add(video_id)
+
+        # Download all videos concurrently (only unique video_ids)
         download_tasks = [
-            process_video(url, temp_dir) for url in request.urls
+            process_video(url, temp_dir) for url in unique_urls
         ]
         download_results = await asyncio.gather(*download_tasks)
 
