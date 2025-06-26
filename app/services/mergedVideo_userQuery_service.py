@@ -75,7 +75,7 @@ def mergedVideo_userQuery_service(
     print("Channel names extracted:", channel_names)
 
     for match_obj in user_query_match:
-        transcript_segments = match_obj.get("transcript", [])[:3]  # Will take up to 3 segments
+        transcript_segments = match_obj.get("transcript", [])[:4]  # Will take up to 3 segments
         for segment in transcript_segments:
             video_id = segment["video_id"]
             start = segment["start"]
@@ -114,7 +114,7 @@ def mergedVideo_userQuery_service(
                 scale_filter = "scale=1920:1080:flags=lanczos"
                 vf_filter = f"{drawtext_filter},{scale_filter}"
                 video_crf = "18"  # Higher quality for upscaled video
-                video_preset = "veryslow"  # Best quality preset
+                video_preset = "slow"  # Best quality preset
             elif video_height == 1080:
                 vf_filter = drawtext_filter
                 video_crf = "23"
@@ -126,9 +126,9 @@ def mergedVideo_userQuery_service(
 
             cmd = [
                 ffmpeg_path, "-y",
+                "-i", matching_video,
                 "-ss", str(start),
                 "-t", str(duration),
-                "-i", matching_video,
                 "-vf", vf_filter,
                 "-c:v", "libx264",
                 "-preset", video_preset,
@@ -167,7 +167,7 @@ def mergedVideo_userQuery_service(
             "-i", concat_list,           
             "-c:v", "libx264",     # CPU encoder
             "-preset", "medium",    # Higher quality preset
-            "-crf", "18",        # Lower CRF for higher quality
+            "-crf", "23",        # Lower CRF for higher quality
             "-c:a", "aac",
             "-ar", "44100",      # Higher audio sample rate
             "-ac", "2",
