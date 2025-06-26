@@ -111,12 +111,18 @@ def mergedVideo_userQuery_service(
 
             drawtext_filter = f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=34:fontcolor=white:x=w-tw-10:y=h-th-10"
             if video_height == 720:
-                pad_filter = "pad=1920:1080:(ow-iw)/2:(oh-ih)/2"
-                vf_filter = f"{drawtext_filter},{pad_filter}"
+                scale_filter = "scale=1920:1080:flags=lanczos"
+                vf_filter = f"{drawtext_filter},{scale_filter}"
+                video_crf = "18"  # Higher quality for upscaled video
+                video_preset = "veryslow"  # Best quality preset
             elif video_height == 1080:
-                vf_filter = drawtext_filter  # No scaling or padding for 1080p
+                vf_filter = drawtext_filter
+                video_crf = "23"
+                video_preset = "medium"
             else:
-                vf_filter = drawtext_filter  # No scaling or padding for other resolutions
+                vf_filter = drawtext_filter
+                video_crf = "23"
+                video_preset = "medium"
 
             cmd = [
                 ffmpeg_path, "-y",
@@ -124,13 +130,13 @@ def mergedVideo_userQuery_service(
                 "-t", str(duration),
                 "-i", matching_video,
                 "-vf", vf_filter,
-                "-c:v", "libx264",     # CPU encoder
-                "-preset", "medium",    # Higher quality preset
-                "-crf", "23",        # Lower CRF for higher quality (range 0-51, lower is better)
+                "-c:v", "libx264",
+                "-preset", video_preset,
+                "-crf", video_crf,
                 "-c:a", "aac",
-                "-ar", "44100",      # Higher audio sample rate
+                "-ar", "44100",
                 "-ac", "2",
-                "-b:a", "128k",      # Higher audio bitrate
+                "-b:a", "128k",
                 "-pix_fmt", "yuv420p",
                 "-r", "30",
                 "-profile:v", "high",  # High profile for better quality
