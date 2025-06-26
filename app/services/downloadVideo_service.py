@@ -37,7 +37,7 @@ def get_default_download_path() -> str:
 
 def download_youtube_video(url: str, output_path: str = None) -> str:
     """
-    Download a YouTube video using yt-dlp.
+    Download a YouTube video using yt-dlp. Retries up to 5 times if download fails.
     
     Args:
         url (str): The URL of the YouTube video
@@ -48,36 +48,41 @@ def download_youtube_video(url: str, output_path: str = None) -> str:
         str: Path to the downloaded video file
     
     Raises:
-        Exception: If download fails
+        Exception: If download fails after 5 attempts
     """
-    try:
-        # Set default path to Windows Downloads folder if not provided
-        if output_path is None:
-            output_path = get_default_download_path()
+    max_retries = 5
+    last_exception = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            # Set default path to Windows Downloads folder if not provided
+            if output_path is None:
+                output_path = get_default_download_path()
             
-        # Create the output directory if it doesn't exist
-        Path(output_path).mkdir(parents=True, exist_ok=True)
-        
-        # Extract video ID for filename
-        video_id = extract_video_id(url)
-        
-        # Configure yt-dlp options
-        ydl_opts = {
-            'format': 'bestvideo[height=1080][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height=720][ext=mp4]+bestaudio[ext=m4a]/best[height=1080]/best[height=720]/best',
-            'outtmpl': os.path.join(output_path, f'{video_id}.%(ext)s'),
-            'quiet': True,
-            'no_warnings': True,
-            'extract_audio': False,
-            'merge_output_format': 'mp4'
-        }
-        
-        # Create yt-dlp object with the options
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # Download the video and get info
-            info = ydl.extract_info(url, download=True)
-            video_path = os.path.join(output_path, f"{video_id}.mp4")
+            # Create the output directory if it doesn't exist
+            Path(output_path).mkdir(parents=True, exist_ok=True)
             
-            return video_path
+            # Extract video ID for filename
+            video_id = extract_video_id(url)
             
-    except Exception as e:
-        raise Exception(f"Failed to download video: {str(e)}")
+            # Configure yt-dlp options
+            ydl_opts = {
+                'format': 'bestvideo[height=1080][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height=720][ext=mp4]+bestaudio[ext=m4a]/best[height=1080]/best[height=720]/best',
+                'outtmpl': os.path.join(output_path, f'{video_id}.%(ext)s'),
+                'quiet': True,
+                'no_warnings': True,
+                'extract_audio': False,
+                'merge_output_format': 'mp4'
+            }
+            
+            # Create yt-dlp object with the options
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                # Download the video and get info
+                info = ydl.extract_info(url, download=True)
+                video_path = os.path.join(output_path, f"{video_id}.mp4")
+                return video_path
+        except Exception as e:
+            last_exception = e
+            if attempt < max_retries:
+                continue  # Try again
+            else:
+                raise Exception(f"Failed to download video after {max_retries} attempts: {str(last_exception)}")
