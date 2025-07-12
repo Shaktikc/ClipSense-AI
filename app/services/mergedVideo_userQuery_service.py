@@ -75,7 +75,7 @@ def mergedVideo_userQuery_service(
     print("Channel names extracted:", channel_names)
 
     for match_obj in user_query_match:
-        transcript_segments = match_obj.get("transcript", [])[:4]  # Will take up to 3 segments
+        transcript_segments = match_obj.get("transcript", [])[:3]  # Will take up to 3 segments
         for segment in transcript_segments:
             video_id = segment["video_id"]
             start = segment["start"]
@@ -93,50 +93,19 @@ def mergedVideo_userQuery_service(
             if len(escaped_font) > 1 and escaped_font[1] == ':':
                 escaped_font = escaped_font[0] + '\\:' + escaped_font[2:]
 
-            # Get video resolution using ffprobe
-            probe_cmd = [
-                ffmpeg_path.replace('ffmpeg', 'ffprobe'),
-                '-v', 'error',
-                '-select_streams', 'v:0',
-                '-show_entries', 'stream=height',
-                '-of', 'default=noprint_wrappers=1:nokey=1',
-                matching_video
-            ]
-            try:
-                result = subprocess.run(probe_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
-                video_height = int(result.stdout.strip())
-            except Exception as e:
-                print(f"Could not determine video resolution, defaulting to no scaling: {e}")
-                video_height = None
-
-            drawtext_filter = f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=34:fontcolor=white:x=w-tw-10:y=h-th-10"
-            if video_height == 720:
-                scale_filter = "scale=1920:1080:flags=lanczos"
-                vf_filter = f"{drawtext_filter},{scale_filter}"
-                video_crf = "18"  # Higher quality for upscaled video
-                video_preset = "slow"  # Best quality preset
-            elif video_height == 1080:
-                vf_filter = drawtext_filter
-                video_crf = "23"
-                video_preset = "medium"
-            else:
-                vf_filter = drawtext_filter
-                video_crf = "23"
-                video_preset = "medium"
-
+            # FFmpeg command with CPU acceleration
             cmd = [
                 ffmpeg_path, "-y",
-                "-i", matching_video,
                 "-ss", str(start),
                 "-t", str(duration),
-                "-vf", vf_filter,
-                "-c:v", "libx264",
-                "-preset", video_preset,
-                "-crf", video_crf,
+                "-i", matching_video,
+                "-vf", f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=34:fontcolor=white:x=w-tw-10:y=h-th-10",                "-c:v", "libx264",     # CPU encoder
+                "-preset", "medium",    # Higher quality preset
+                "-crf", "23",        # Lower CRF for higher quality (range 0-51, lower is better)
                 "-c:a", "aac",
-                "-ar", "44100",
+                "-ar", "44100",      # Higher audio sample rate
                 "-ac", "2",
-                "-b:a", "128k",
+                "-b:a", "128k",      # Higher audio bitrate
                 "-pix_fmt", "yuv420p",
                 "-r", "30",
                 "-profile:v", "high",  # High profile for better quality
@@ -167,7 +136,7 @@ def mergedVideo_userQuery_service(
             "-i", concat_list,           
             "-c:v", "libx264",     # CPU encoder
             "-preset", "medium",    # Higher quality preset
-            "-crf", "23",        # Lower CRF for higher quality
+            "-crf", "18",        # Lower CRF for higher quality
             "-c:a", "aac",
             "-ar", "44100",      # Higher audio sample rate
             "-ac", "2",

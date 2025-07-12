@@ -32,8 +32,9 @@ def extract_video_id(url: str) -> str:
     raise ValueError("Could not extract video ID from URL")
 
 def get_default_download_path() -> str:
-    """Get the default Windows Downloads folder path"""
-    return os.path.join(os.path.expanduser("~"), "Downloads")
+    """Get the system temporary directory path"""
+    import tempfile
+    return tempfile.gettempdir()
 
 def download_youtube_video(url: str, output_path: str = None) -> str:
     """
@@ -66,7 +67,7 @@ def download_youtube_video(url: str, output_path: str = None) -> str:
             
             # Configure yt-dlp options
             ydl_opts = {
-                'format': 'bestvideo[height=1080][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height=720][ext=mp4]+bestaudio[ext=m4a]/best[height=1080]/best[height=720]/best',
+                'format_sort': ['res:1080', 'ext:mp4:m4a'],
                 'outtmpl': os.path.join(output_path, f'{video_id}.%(ext)s'),
                 'quiet': True,
                 'no_warnings': True,
