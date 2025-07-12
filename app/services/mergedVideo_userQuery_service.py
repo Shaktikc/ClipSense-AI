@@ -96,10 +96,11 @@ def mergedVideo_userQuery_service(
             # FFmpeg command with CPU acceleration
             cmd = [
                 ffmpeg_path, "-y",
+                "-i", matching_video,
                 "-ss", str(start),
                 "-t", str(duration),
-                "-i", matching_video,
-                "-vf", f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=34:fontcolor=white:x=w-tw-10:y=h-th-10",                "-c:v", "libx264",     # CPU encoder
+                "-vf", f"drawtext=fontfile='{escaped_font}':text='{channel_text}':fontsize=34:fontcolor=white:x=w-tw-10:y=h-th-10",                
+                "-c:v", "libx264",     # CPU encoder
                 "-preset", "medium",    # Higher quality preset
                 "-crf", "23",        # Lower CRF for higher quality (range 0-51, lower is better)
                 "-c:a", "aac",
