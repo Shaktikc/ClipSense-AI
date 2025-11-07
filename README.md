@@ -1,22 +1,52 @@
-YouTube VidExtract AI
+🎬 YouTube VidExtract AI
 
-Turn long YouTube videos into short, content-only clips.
-Paste a YouTube link, describe what you need, and the app finds the relevant segments, cuts them with FFmpeg, merges them, and returns a concise video focused on your request.
+YouTube VidExtract AI is an AI-powered tool that extracts and merges only the relevant video segments from YouTube based on the user’s request.
+Simply paste YouTube links and describe what information you need — the AI handles the rest.
 
-Tech stack: FastAPI • LLMs (Mistral, GPT-4.1) • FFmpeg
+🚀 Features
 
-✨ Features
+🧠 AI-Driven Understanding: Uses advanced LLMs (Mistral, GPT-4.1) to understand your query and locate the most relevant video segments.
 
-Natural-language search: “Show only the parts where the speaker explains transformers with code.”
+🎞️ Smart Video Extraction: Automatically identifies timestamps from transcriptions and extracts only the necessary portions.
 
-Auto segmenting: LLMs scan the transcript and locate the timecodes.
+⚙️ Fast Processing: Built with FastAPI for efficient backend operations.
 
-Precise clipping: FFmpeg extracts the exact ranges and merges in order.
+🎬 Video Merging: Uses FFmpeg to seamlessly merge all selected clips into one concise, meaningful video.
 
-Two modes:
+💡 Customizable: Specify topics, keywords, or time ranges for better precision.
 
-Auto: LLM finds segments from your prompt
+🧩 Tech Stack
 
-Manual: you provide explicit time ranges
+Backend: FastAPI
 
-JSON job API: fire-and-forget with progress polling.
+AI Models: Mistral, GPT-4.1
+
+Video Processing: FFmpeg
+
+Transcription & Analysis: YouTube transcript extraction + LLM semantic search
+
+🖥️ How It Works
+
+Paste YouTube Link(s) — Provide one or more video URLs.
+
+Specify What You Need — For example: “Show me the part where the speaker explains reinforcement learning.”
+
+AI Processing — The system uses LLMs to understand your request and locate relevant timestamps from video transcriptions.
+
+Video Extraction — FFmpeg extracts and merges the clips.
+
+Output — Get a concise video containing only the information you requested.
+
+⚡ Example Use Case
+
+“Extract all parts explaining the concept of transformers from this YouTube lecture series.”
+
+VidExtract AI will:
+
+Analyze the transcripts of all videos.
+
+Detect where “transformers” are discussed.
+
+Extract those clips.
+
+Merge them into a single summarized video.
