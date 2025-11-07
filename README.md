@@ -1,52 +1,62 @@
-🎬 YouTube VidExtract AI
+# 🎬 YouTube VidExtract AI
 
-YouTube VidExtract AI is an AI-powered tool that extracts and merges only the relevant video segments from YouTube based on the user’s request.
+**YouTube VidExtract AI** is an AI-powered tool that extracts and merges only the *relevant* video segments from YouTube based on the user’s request.  
 Simply paste YouTube links and describe what information you need — the AI handles the rest.
 
-🚀 Features
+---
 
-🧠 AI-Driven Understanding: Uses advanced LLMs (Mistral, GPT-4.1) to understand your query and locate the most relevant video segments.
+## 🚀 Features
 
-🎞️ Smart Video Extraction: Automatically identifies timestamps from transcriptions and extracts only the necessary portions.
+- 🧠 **AI-Driven Understanding:** Uses advanced LLMs (Mistral, GPT-4.1) to understand your query and locate the most relevant video segments.  
+- 🎞️ **Smart Video Extraction:** Automatically identifies timestamps from transcriptions and extracts only the necessary portions.  
+- ⚙️ **Fast Processing:** Built with **FastAPI** for efficient backend operations.  
+- 🎬 **Video Merging:** Uses **FFmpeg** to seamlessly merge all selected clips into one concise, meaningful video.  
+- 💡 **Customizable:** Specify topics, keywords, or time ranges for better precision.
 
-⚙️ Fast Processing: Built with FastAPI for efficient backend operations.
+---
 
-🎬 Video Merging: Uses FFmpeg to seamlessly merge all selected clips into one concise, meaningful video.
+## 🧩 Tech Stack
 
-💡 Customizable: Specify topics, keywords, or time ranges for better precision.
+- **Backend:** FastAPI  
+- **AI Models:** Mistral, GPT-4.1  
+- **Video Processing:** FFmpeg  
+- **Transcription & Analysis:** YouTube transcript extraction + LLM semantic search  
 
-🧩 Tech Stack
+---
 
-Backend: FastAPI
+## 🖥️ How It Works
 
-AI Models: Mistral, GPT-4.1
+1. **Paste YouTube Link(s)** — Provide one or more video URLs.  
+2. **Specify What You Need** — Example: “Show me the part where the speaker explains reinforcement learning.”  
+3. **AI Processing** — The system uses LLMs to understand your request and locate relevant timestamps from transcriptions.  
+4. **Video Extraction** — FFmpeg extracts and merges the clips.  
+5. **Output** — Get a concise video containing *only* the requested content.
 
-Video Processing: FFmpeg
+---
 
-Transcription & Analysis: YouTube transcript extraction + LLM semantic search
+## ⚡ Example Use Case
 
-🖥️ How It Works
-
-Paste YouTube Link(s) — Provide one or more video URLs.
-
-Specify What You Need — For example: “Show me the part where the speaker explains reinforcement learning.”
-
-AI Processing — The system uses LLMs to understand your request and locate relevant timestamps from video transcriptions.
-
-Video Extraction — FFmpeg extracts and merges the clips.
-
-Output — Get a concise video containing only the information you requested.
-
-⚡ Example Use Case
-
-“Extract all parts explaining the concept of transformers from this YouTube lecture series.”
+> “Extract all parts explaining the concept of transformers from this YouTube lecture series.”
 
 VidExtract AI will:
+- Analyze the transcripts of all videos.
+- Detect where “transformers” are discussed.
+- Extract those clips.
+- Merge them into a single summarized video.
 
-Analyze the transcripts of all videos.
+---
 
-Detect where “transformers” are discussed.
+## 🏗️ Setup & Installation
 
-Extract those clips.
+```bash
+# Clone the repository
 
-Merge them into a single summarized video.
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # (Windows: venv\Scripts\activate)
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run FastAPI server
+uvicorn main:app --reload
