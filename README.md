@@ -1,4 +1,4 @@
-# 🎬 YouTube VidExtract AI
+# 🎬ClipSense AI
 
 **YouTube VidExtract AI** is an AI-powered tool that extracts and merges only the *relevant* video segments from YouTube based on the user’s request.  
 Simply paste YouTube links and describe what information you need — the AI handles the rest.
