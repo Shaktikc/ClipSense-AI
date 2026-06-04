@@ -1,0 +1,39 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+env/
+.venv/
+.merged.mp4
+merged.mp4
+
+# Environment variables
+.env
+
+# VSCode / IDE settings
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Dependency lock files (optional)
+poetry.lock
+Pipfile.lock
+
+# Python cache
+*.egg-info/
+.eggs/
+
+# Test output
+htmlcov/
+coverage.xml
+.cache/
+.tox/
